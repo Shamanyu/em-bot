@@ -1,76 +1,137 @@
 # EM Bot — Claude Code Context
 
-## What this project is
-A weekly automated analysis bot for engineering managers. It runs every Tuesday, reads in-scope Epics from a JIRA saved filter, generates structured per-Epic analysis using Claude (tool-use), and posts ADF-formatted comments directly to JIRA. A team rollup comment is also posted to a designated ticket.
+## What this project does
+Automates weekly JIRA Epic review for engineering managers. On a Tuesday cron, it resolves in-scope Epics from a saved JIRA filter, builds a snapshot of each Epic (child issues, this week's and last week's comments, deterministic heuristics), calls Claude via tool-use to produce a structured analysis, and posts ADF-formatted comments to JIRA. A team rollup comment is posted to a single designated ticket.
 
-## Tech stack
-- **Runtime:** Node.js 20+, TypeScript (strict mode, ESM)
-- **Key deps:** `@anthropic-ai/sdk`, `axios`, `zod`, `pino`, `yaml`
-- **Test framework:** Vitest
-- **CI/CD:** GitHub Actions (cron Tuesday 05:30 UTC, manual dispatch with dry-run toggle)
+## Runtime and toolchain
+- **Language:** TypeScript, strict mode, ESM (`"type": "module"`)
+- **Runtime:** Node.js 20+
+- **Key deps:** `@anthropic-ai/sdk` (tool-use), `axios` (JIRA REST), `zod` (runtime validation), `pino` (JSON logging), `yaml` (config parsing)
+- **Test framework:** Vitest — 61 tests, no credentials required
+- **Scheduler:** GitHub Actions cron — no server needed
 
-## Repository layout
+## Source layout and what each module does
+
 ```
 src/
-  config/       # Zod-validated config loader (.env + config.yaml)
-  jira/         # JIRA client, snapshot builder, ADF builder, heuristics
-  llm/          # Claude analyser using tool-use (submit_epic_analysis)
-  rollup/       # Team-level aggregation + ADF rollup comment
-  orchestrator.ts  # Main run loop — per-Epic try/catch, idempotency
-  index.ts      # Entry point — boots logger, loads config, calls run()
-  lib/          # logger, retry (exponential backoff), time windows
-  types/        # Zod schemas + inferred TS types for all data contracts
-  errors.ts     # ConfigError, ScopeTooLargeError, JiraApiError, LlmAnalysisFailedError
-tests/
-  unit/         # Pure unit tests per module
-  integration/  # Dry-run orchestrator test (mocked JIRA + LLM)
-  fixtures/     # JSON fixtures: snapshots, analysis results, raw JIRA issue
+  index.ts              Entry point. Loads dotenv first (override:true), inits logger,
+                        calls loadConfig() + loadEnv(), wires deps, calls run().
+
+  orchestrator.ts       Main loop. Captures runStartedAt once. For each Epic:
+                        build snapshot → idempotency check → LLM analysis →
+                        build ADF → post comment. All in try/catch so one Epic
+                        failure never aborts the run. Builds + posts rollup last.
+
+  errors.ts             ConfigError, ScopeTooLargeError, JiraApiError,
+                        LlmAnalysisFailedError. Custom classes used throughout.
+
+  config/
+    schema.ts           Single Zod schema (ConfigSchema) for config.yaml.
+                        Source of truth for all config field names and defaults.
+    loader.ts           loadConfig(): calls dotenv.config({override:true}), reads
+                        config.yaml from cwd, validates against ConfigSchema.
+                        loadEnv(): reads already-loaded process.env into a typed object.
+                        Both abort with ConfigError on invalid input.
+    index.ts            Re-exports.
+
+  jira/
+    client.ts           Thin axios wrapper. 250ms throttle between GETs. Exponential
+                        backoff on 429/5xx. POST /rest/api/3/search/jql (cursor-based,
+                        no startAt). All errors wrapped in JiraApiError with status code.
+    customFields.ts     Discovers story-points and epic-link custom field IDs via
+                        GET /rest/api/3/field. Cached per process.
+    scopeResolver.ts    Gets filter JQL, appends projectKeys safety boundary and
+                        issuetype=Epic. Throws ScopeTooLargeError if over limit.
+    snapshotBuilder.ts  Orchestrates per-Epic data fetch. Three-method child fallback:
+                        parent field → Epic Link custom field → Agile API. Fetches
+                        comments from Epic AND all children. Windows comments into
+                        currentWeek/previousWeek. Sets botCommentExistsThisWeek.
+    heuristics.ts       Deterministic helpers: hasAcceptanceCriteria (regex),
+                        ageInToDoDays (date math), percentComplete (done/total).
+                        Never delegated to LLM.
+    statusMapper.ts     Maps JIRA statusCategory.key → "todo"|"inProgress"|"done".
+    adfTextExtractor.ts Recursive ADF JSON → plain text. Used to extract comment
+                        body text from raw JIRA API responses.
+    adfBuilder.ts       Node constructors (text, heading, bulletList, etc.) and
+                        buildEpicComment() which assembles the full per-Epic ADF.
+
+  llm/
+    client.ts           Thin wrapper around new Anthropic({apiKey}).
+    tool.ts             epicAnalysisTool definition. tool_choice is forced to
+                        "submit_epic_analysis" on every call.
+    promptBuilder.ts    buildUserMessage(snapshot) → compact deterministic string.
+                        Renders child issue table with flags (no-AC, unassigned,
+                        stale-todo-Nd, etc.) and both comment windows.
+    analyser.ts         Loop up to maxRetries+1. On tool-use failure or Zod error,
+                        appends corrective note to system prompt and retries.
+                        Throws LlmAnalysisFailedError after exhaustion.
+
+  rollup/
+    builder.ts          Pure aggregation over EpicOutcome[]. Sorts RED first.
+                        No LLM call.
+    adfBuilder.ts       Builds rollup ADF with summary paragraph, risk counts,
+                        ADF table (Epic | Assignee | Risk | Signal), missing
+                        updates, top risks, failed analyses.
+
+  lib/
+    logger.ts           pino JSON logger. initLogger(level) sets the singleton.
+                        getLogger() returns it. ISO 8601 timestamps.
+    retry.ts            withExponentialBackoff(fn, opts). Respects shouldRetry
+                        predicate. Used in JiraClient for 429/5xx.
+    time.ts             computeWindows(now, lookbackDays) → {currentStart,
+                        currentEnd, previousStart, previousEnd}. Right-open
+                        intervals. isInWindow() for comment bucketing.
+
+  types/
+    EpicSnapshot.ts     Zod schema + TS type. Also JiraIssueRaw, JiraCommentRaw.
+    AnalysisResult.ts   Zod schema + TS type for LLM tool output.
+    TeamRollup.ts       Zod schema + TS type for rollup.
+    Adf.ts              AdfNode and AdfDocument interfaces (not Zod — structural only).
+
 prompts/
-  system-prompt.md  # Claude system prompt — edit this to tune analysis quality
-config.yaml     # Non-secret app config (filterId, model, behaviour tuning)
-.env            # Secrets — never committed (see .env.example)
+  system-prompt.md      Claude system prompt. Edit this to tune analysis quality.
+                        Loaded at runtime from cwd — no rebuild needed.
+
+tests/
+  unit/                 One file per module. No credentials, no network.
+  integration/          orchestrator.dryrun.test.ts — mocks JIRA + LLM, asserts
+                        zero comment posts in dry-run mode, correct summary shape.
+  fixtures/             snapshot-on-track.json, snapshot-at-risk.json,
+                        snapshot-no-update.json, analysis-result-valid.json,
+                        jira-issue-raw.json
 ```
 
-## Running locally
-```bash
-npm install
-cp .env.example .env     # fill in credentials
-npm run typecheck
-npm run test
-DRY_RUN=true npm run dev  # dry run — hits real JIRA + Claude, writes nothing
-npm run dev               # live run — posts comments to JIRA
-```
+## Configuration: two-file model
+- **`.env`** — secrets only (JIRA credentials, Anthropic key, DRY_RUN, LOG_LEVEL). Never committed.
+- **`config.yaml`** — everything else. Committed. Validated by ConfigSchema at startup.
+- `loadDotenv({override:true})` is called at the very top of `main()` in `index.ts`, before `loadEnv()` or `loadConfig()`, to ensure shell env vars don't shadow `.env` values.
 
-## Environment variables
-All secrets live in `.env` (never committed). Required:
-- `JIRA_BASE_URL` — e.g. `https://your-org.atlassian.net`
-- `JIRA_USER_EMAIL` — email for the Atlassian API token
-- `JIRA_API_TOKEN` — Atlassian API token
-- `ANTHROPIC_API_KEY` — Anthropic API key
-- `DRY_RUN` — `true` to skip all JIRA writes (default: `false`)
+## JIRA API notes
+- API v3 throughout. Auth: HTTP Basic base64(email:token).
+- Search: `POST /rest/api/3/search/jql` — cursor-based, does NOT accept `startAt`. Response shape: `{issues, isLast}` not `{issues, total}`.
+- Comments: `GET /rest/api/3/issue/{key}/comment` with pagination.
+- Post comment: `POST /rest/api/3/issue/{key}/comment` with ADF body.
+- Custom fields discovered dynamically via `GET /rest/api/3/field`, cached per-process.
 
-## Key design decisions
-- **Claude tool-use** (not prompted JSON) — enforces schema at model level. See `src/llm/tool.ts`.
-- **Zod everywhere** — config, EpicSnapshot, AnalysisResult, TeamRollup all validated at runtime.
-- **Per-Epic isolation** — each Epic is wrapped in try/catch; one failure doesn't abort the run.
-- **Idempotency** — bot skips an Epic if it finds a comment with `[EM-BOT-WEEKLY]` tag in the current lookback window. Controlled by `behaviour.skipIfAlreadyPosted` in config.yaml.
-- **JIRA API v3** — uses `POST /rest/api/3/search/jql` (cursor-based, no `startAt`). ADF for all comment bodies.
-- **Three-method child-issue fallback** — parent field → Epic Link custom field → Agile API.
+## LLM integration notes
+- Model: `claude-sonnet-4-6` (configured in config.yaml, not hardcoded).
+- Tool-use with `tool_choice: {type:"tool", name:"submit_epic_analysis"}` — forces a single structured call.
+- Zod validates the tool input. On failure, a corrective note is appended to the system prompt and retried.
+- `epicKey` is checked post-validation — wrong key throws immediately, no retry.
+- Recommendations are clamped to `[minRecommendations, maxRecommendations]` from config.
 
-## Tuning analysis quality
-Edit `prompts/system-prompt.md` to adjust the evaluation rubric, risk level thresholds, tone, or recommendation style. No code changes needed — the file is read at runtime.
+## Idempotency
+Bot skips an Epic if any comment in the current lookback window starts with `botIdentity.commentTag` (default `[EM-BOT-WEEKLY]`). Controlled by `behaviour.skipIfAlreadyPosted`. The rollup is always rebuilt and posted, even on re-runs.
 
-## Adding Epics to scope
-Add the `em-test` label (or whichever label the JIRA saved filter uses) to any Epic. It will be included in the next Tuesday run automatically. No code or config change required.
+## Observability
+All log lines are JSON with an `event` field. Key events: `run_start`, `scope_resolved`, `snapshot_built`, `epic_skipped`, `llm_analysed`, `comment_posted`, `dry_run_comment`, `rollup_posted`, `run_complete`, `epic_failed`, `fatal`. Exit code 1 if any Epic failed.
 
-## Config values to know
-- `jira.filterId: TBD` — "EM Bot EPICs" saved filter owned by Shubham Shamanyu
-- `jira.rollupTicketKey: TBD` — team rollup destination ticket
-- `jira.projectKeys: [CM, SP, XPS, CA]` — safety boundary for JQL
-- `llm.model: claude-sonnet-4-6` — change here to upgrade model
+## GitHub Actions cron
+`.github/workflows/em-bot-weekly.yml` — fires Tuesday 05:30 UTC (= 11:00 IST). GitHub hosts the runner; no server needed. Secrets injected as env vars. Manual trigger via `workflow_dispatch` with a `dry_run` boolean input. CI workflow runs lint + typecheck + tests on every PR.
 
-## What NOT to do
-- Don't commit `.env`
-- Don't use `any` — TypeScript strict mode enforces this
-- Don't modify JIRA issue fields (status, due date, assignee) — bot is read + comment only
-- Don't close/resolve PROJ-1234 — it accumulates weekly rollup comments
+## What not to change without understanding the knock-on effects
+- `EpicSnapshotSchema` — changing field names breaks snapshotBuilder, promptBuilder, and all fixtures
+- `AnalysisResultSchema` — changing enum values breaks the tool definition, ADF builder, and fixtures
+- `tool.ts` input_schema — must stay in sync with AnalysisResultSchema
+- The `$defs.dimension` ref in tool.ts — used by goalClarity and definitionOfDone
+- `POST /rest/api/3/search/jql` body — does not accept `startAt`; use `nextPageToken` for pagination if needed
