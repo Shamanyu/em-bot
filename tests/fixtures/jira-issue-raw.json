@@ -1,0 +1,30 @@
+{
+  "id": "10001",
+  "key": "CM-1234",
+  "fields": {
+    "summary": "AI Productivity Q2",
+    "description": {
+      "version": 1,
+      "type": "doc",
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [{ "type": "text", "text": "Improve AI features to boost productivity." }]
+        }
+      ]
+    },
+    "status": {
+      "name": "In Progress",
+      "statusCategory": { "key": "indeterminate", "name": "In Progress" }
+    },
+    "issuetype": { "name": "Epic", "id": "6" },
+    "assignee": { "displayName": "Amit Yadav", "accountId": "def456" },
+    "reporter": { "displayName": "Shamanyu Shrivastava", "accountId": "ghi789" },
+    "created": "2026-03-01T09:00:00.000Z",
+    "updated": "2026-05-05T11:00:00.000Z",
+    "duedate": "2026-05-20",
+    "labels": ["q2-priority"],
+    "components": [{ "name": "AI" }],
+    "startdate": "2026-03-01"
+  }
+}

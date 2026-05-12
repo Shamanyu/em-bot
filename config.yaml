@@ -1,0 +1,26 @@
+enabled: true
+
+jira:
+  filterId: 13297
+  rollupTicketKey: CM-1571
+  projectKeys: [CM, SP, XPS, CA]
+  apiVersion: "3"
+
+schedule:
+  lookbackDays: 7
+
+llm:
+  model: "claude-sonnet-4-6"
+  maxTokens: 2000
+  maxRetries: 1
+
+botIdentity:
+  commentTag: "[EM-BOT-WEEKLY]"
+  signature: "— EM Bot"
+
+behaviour:
+  skipIfAlreadyPosted: true
+  postRollupEvenIfZeroEpics: false
+  minRecommendations: 2
+  maxRecommendations: 5
+  maxEpicsPerRun: 20
