@@ -17,6 +17,7 @@ export const ChildIssueSchema = z.object({
   updatedAt: z.string(),
   hasDescription: z.boolean(),
   hasAcceptanceCriteria: z.boolean(),
+  hasStoryPoints: z.boolean(),
   ageInToDoDays: z.number(),
 });
 export type ChildIssue = z.infer<typeof ChildIssueSchema>;

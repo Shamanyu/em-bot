@@ -67,6 +67,10 @@ export async function buildSnapshot(
       updatedAt: cf['updated'] as string,
       hasDescription: descText.length > 0,
       hasAcceptanceCriteria: hasAcceptanceCriteria(acText),
+      hasStoryPoints:
+        customFields.storyPointsField
+          ? (cf[customFields.storyPointsField] as number | null) != null
+          : false,
       ageInToDoDays: ageInToDoDays({ statusBucket, createdAt }, runStartedAt),
     };
     return childIssue;

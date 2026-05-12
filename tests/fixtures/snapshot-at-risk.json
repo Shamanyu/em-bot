@@ -7,8 +7,12 @@
   "epicReporter": "Shamanyu Shrivastava",
   "epicStartDate": "2026-03-01",
   "epicDueDate": "2026-05-20",
-  "epicLabels": ["q2-priority"],
-  "epicComponents": ["AI"],
+  "epicLabels": [
+    "q2-priority"
+  ],
+  "epicComponents": [
+    "AI"
+  ],
   "epicUrl": "https://your-org.atlassian.net/browse/CM-1234",
   "epicCreatedAt": "2026-03-01T09:00:00.000Z",
   "childIssues": [
@@ -26,7 +30,8 @@
       "updatedAt": "2026-03-14T15:00:00.000Z",
       "hasDescription": true,
       "hasAcceptanceCriteria": true,
-      "ageInToDoDays": 0
+      "ageInToDoDays": 0,
+      "hasStoryPoints": true
     },
     {
       "key": "CM-1240",
@@ -42,7 +47,8 @@
       "updatedAt": "2026-03-01T09:00:00.000Z",
       "hasDescription": false,
       "hasAcceptanceCriteria": false,
-      "ageInToDoDays": 67
+      "ageInToDoDays": 67,
+      "hasStoryPoints": false
     }
   ],
   "currentWeekComments": [
