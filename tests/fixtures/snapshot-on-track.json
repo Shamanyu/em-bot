@@ -1,0 +1,70 @@
+{
+  "epicKey": "CM-100",
+  "epicSummary": "AI Tutor Personalisation Engine",
+  "epicDescription": "Build a personalised tutoring engine that adapts lesson difficulty based on learner performance data. Success: ≥20% improvement in learner completion rate by end of Q2.",
+  "epicStatus": "In Progress",
+  "epicAssignee": "Priya Sharma",
+  "epicReporter": "Shamanyu Shrivastava",
+  "epicStartDate": "2026-04-01",
+  "epicDueDate": "2026-05-30",
+  "epicLabels": ["ai", "q2-priority"],
+  "epicComponents": ["Backend", "ML"],
+  "epicUrl": "https://your-org.atlassian.net/browse/CM-100",
+  "epicCreatedAt": "2026-04-01T09:00:00.000Z",
+  "childIssues": [
+    {
+      "key": "CM-101",
+      "summary": "Design learner performance schema",
+      "issueType": "Story",
+      "status": "Done",
+      "statusBucket": "done",
+      "assignee": "Priya Sharma",
+      "storyPoints": 3,
+      "dueDate": "2026-04-10",
+      "url": "https://your-org.atlassian.net/browse/CM-101",
+      "createdAt": "2026-04-01T09:00:00.000Z",
+      "updatedAt": "2026-04-09T15:00:00.000Z",
+      "hasDescription": true,
+      "hasAcceptanceCriteria": true,
+      "ageInToDoDays": 0
+    },
+    {
+      "key": "CM-102",
+      "summary": "Implement difficulty adaptation algorithm",
+      "issueType": "Story",
+      "status": "In Progress",
+      "statusBucket": "inProgress",
+      "assignee": "Priya Sharma",
+      "storyPoints": 5,
+      "dueDate": "2026-05-15",
+      "url": "https://your-org.atlassian.net/browse/CM-102",
+      "createdAt": "2026-04-10T09:00:00.000Z",
+      "updatedAt": "2026-05-06T10:00:00.000Z",
+      "hasDescription": true,
+      "hasAcceptanceCriteria": true,
+      "ageInToDoDays": 0
+    }
+  ],
+  "currentWeekComments": [
+    {
+      "issueKey": "CM-100",
+      "author": "Priya Sharma",
+      "authorAccountId": "abc123",
+      "createdAt": "2026-05-06T10:00:00.000Z",
+      "body": "Week update: Completed the core adaptation logic. Unit tests passing. Next: integration with learner profile service."
+    }
+  ],
+  "previousWeekComments": [
+    {
+      "issueKey": "CM-100",
+      "author": "Priya Sharma",
+      "authorAccountId": "abc123",
+      "createdAt": "2026-04-29T10:00:00.000Z",
+      "body": "Week update: Started on CM-102. Will complete adaptation algorithm by Friday."
+    }
+  ],
+  "botCommentExistsThisWeek": false,
+  "lastBotCommentAt": null,
+  "percentComplete": 50.0,
+  "runStartedAt": "2026-05-07T05:30:00.000Z"
+}

@@ -1,0 +1,38 @@
+{
+  "epicKey": "SP-55",
+  "epicSummary": "Mentor Matching Algorithm V2",
+  "epicDescription": "",
+  "epicStatus": "In Progress",
+  "epicAssignee": null,
+  "epicReporter": "Shamanyu Shrivastava",
+  "epicStartDate": null,
+  "epicDueDate": "2026-05-10",
+  "epicLabels": [],
+  "epicComponents": [],
+  "epicUrl": "https://your-org.atlassian.net/browse/SP-55",
+  "epicCreatedAt": "2026-03-15T09:00:00.000Z",
+  "childIssues": [
+    {
+      "key": "SP-56",
+      "summary": "Research matching algorithms",
+      "issueType": "Story",
+      "status": "To Do",
+      "statusBucket": "todo",
+      "assignee": null,
+      "storyPoints": null,
+      "dueDate": null,
+      "url": "https://your-org.atlassian.net/browse/SP-56",
+      "createdAt": "2026-03-15T09:00:00.000Z",
+      "updatedAt": "2026-03-15T09:00:00.000Z",
+      "hasDescription": false,
+      "hasAcceptanceCriteria": false,
+      "ageInToDoDays": 53
+    }
+  ],
+  "currentWeekComments": [],
+  "previousWeekComments": [],
+  "botCommentExistsThisWeek": false,
+  "lastBotCommentAt": null,
+  "percentComplete": 0.0,
+  "runStartedAt": "2026-05-07T05:30:00.000Z"
+}
