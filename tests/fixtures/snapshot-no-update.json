@@ -26,7 +26,8 @@
       "updatedAt": "2026-03-15T09:00:00.000Z",
       "hasDescription": false,
       "hasAcceptanceCriteria": false,
-      "ageInToDoDays": 53
+      "ageInToDoDays": 53,
+      "hasStoryPoints": false
     }
   ],
   "currentWeekComments": [],

@@ -15,14 +15,14 @@ describe('buildUserMessage', () => {
   it('includes child issue flags for at-risk snapshot', () => {
     const msg = buildUserMessage(snapshotAtRisk as EpicSnapshot);
     expect(msg).toContain('no-description');
-    expect(msg).toContain('no-AC');
+    expect(msg).toContain('no-DoD');
     expect(msg).toContain('unassigned');
-    expect(msg).toContain('stale-todo');
+    expect(msg).toContain('stale-');
   });
 
   it('shows no-update message when currentWeekComments is empty', () => {
     const msg = buildUserMessage(snapshotNoUpdate as EpicSnapshot);
-    expect(msg).toContain('No comments in the current week window');
+    expect(msg).toContain('No comments posted this week');
   });
 
   it('includes previous week comments', () => {

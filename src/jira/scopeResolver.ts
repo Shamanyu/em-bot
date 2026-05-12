@@ -9,7 +9,8 @@ export async function resolveScope(
 ): Promise<string[]> {
   const filter = await client.getFilter(filterId);
   const projectBoundary = `project in (${projectKeys.join(', ')})`;
-  const jql = `(${filter.jql}) AND ${projectBoundary} AND issuetype = Epic`;
+  // Always enforce: correct projects, Epics only, never Done — regardless of filter JQL
+  const jql = `(${filter.jql}) AND ${projectBoundary} AND issuetype = Epic AND statusCategory != Done`;
 
   const result = await client.searchByJql(jql, ['summary', 'issuetype'], 200);
 
