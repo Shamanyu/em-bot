@@ -1,0 +1,18 @@
+enabled: true
+
+jira:
+  projectKeys: [CM, XPS, SP]
+  activeEpicsMax: 30
+
+schedule:
+  completedLookbackDays: 30
+  commentLookbackDays: 7
+
+llm:
+  model: "claude-sonnet-4-6"
+  maxTokens: 4096
+  maxRetries: 1
+
+output:
+  pageTitle: "Engineering Progress Dashboard"
+  outputPath: "features/progress-dashboard/frontend/public/dashboard.json"

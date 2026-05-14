@@ -1,0 +1,88 @@
+{
+  "generatedAt": "2026-05-14T10:30:00.000Z",
+  "teamProgress": {
+    "headline": "Shipped 18 items across 3 themes in the past 30 days.",
+    "themes": [
+      {
+        "name": "Auth & Security",
+        "summary": "Completed the OAuth2 integration and rolled out MFA to all learner accounts. Session token rotation is now enforced on every login.",
+        "issueKeys": ["CM-1200", "CM-1201", "CM-1205"]
+      },
+      {
+        "name": "API & Integrations",
+        "summary": "Delivered the Salesforce CRM sync and the outbound webhook framework. Two partner integrations are now live.",
+        "issueKeys": ["SP-340", "SP-341", "SP-345", "XPS-210"]
+      },
+      {
+        "name": "Learner Experience",
+        "summary": "Shipped the new course progress bar and fixed the video resume bug affecting mobile users.",
+        "issueKeys": ["CM-1220", "CM-1221", "CM-1225"]
+      }
+    ],
+    "periodStart": "2026-04-14",
+    "periodEnd": "2026-05-14",
+    "totalIssues": 18
+  },
+  "teamGoals": [
+    {
+      "epicKey": "CM-1507",
+      "epicSummary": "OAuth2 & SSO Integration",
+      "epicUrl": "https://springboard.atlassian.net/browse/CM-1507",
+      "epicAssignee": "Amit Sharma",
+      "epicDueDate": "2026-05-28",
+      "epicPriority": "High",
+      "percentComplete": 66,
+      "oneLineSummary": "Integrate OAuth2 and SSO so learners can sign in with their corporate identity provider.",
+      "currentStatus": "OAuth2 flow is working end-to-end. SAML SSO is in progress with one blocker on the IdP metadata exchange.",
+      "scheduleHealth": "AT_RISK",
+      "blockers": ["IdP metadata exchange not yet resolved with the enterprise customer's IT team"]
+    },
+    {
+      "epicKey": "CM-1367",
+      "epicSummary": "Mobile App v2 Launch",
+      "epicUrl": "https://springboard.atlassian.net/browse/CM-1367",
+      "epicAssignee": "Priya Nair",
+      "epicDueDate": "2026-06-15",
+      "epicPriority": "Highest",
+      "percentComplete": 44,
+      "oneLineSummary": "Rebuild the iOS and Android apps with offline-first architecture and a new design system.",
+      "currentStatus": "Core navigation and offline sync are complete. Push notifications and deep linking are still in progress.",
+      "scheduleHealth": "ON_TRACK",
+      "blockers": []
+    }
+  ],
+  "weeklyGoals": [
+    {
+      "person": "Amit Sharma",
+      "epics": [
+        {
+          "epicKey": "CM-1507",
+          "epicSummary": "OAuth2 & SSO Integration",
+          "epicUrl": "https://springboard.atlassian.net/browse/CM-1507",
+          "epicDueDate": "2026-05-28",
+          "epicPriority": "High",
+          "scheduleHealth": "AT_RISK",
+          "currentStateOneLiner": "OAuth2 done, SAML SSO blocked on IdP metadata exchange — 66% complete.",
+          "thisWeekGoal": "Resolve IdP metadata issue with customer IT and complete SAML assertion validation.",
+          "updateMissing": false
+        }
+      ]
+    },
+    {
+      "person": "Priya Nair",
+      "epics": [
+        {
+          "epicKey": "CM-1367",
+          "epicSummary": "Mobile App v2 Launch",
+          "epicUrl": "https://springboard.atlassian.net/browse/CM-1367",
+          "epicDueDate": "2026-06-15",
+          "epicPriority": "Highest",
+          "scheduleHealth": "ON_TRACK",
+          "currentStateOneLiner": "Offline sync and core navigation shipped; push notifications next.",
+          "thisWeekGoal": "Complete push notification implementation and submit to app store review.",
+          "updateMissing": false
+        }
+      ]
+    }
+  ]
+}

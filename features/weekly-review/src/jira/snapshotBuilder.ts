@@ -107,6 +107,7 @@ export async function buildSnapshot(
       ((fields['components'] as Array<{ name: string }>) ?? []).map((c) => c.name) ?? [],
     epicUrl: `${baseUrl}/browse/${epicKey}`,
     epicCreatedAt: fields['created'] as string,
+    epicPriority: (fields['priority'] as { name: string } | null)?.name ?? null,
     childIssues: mappedChildren,
     currentWeekComments,
     previousWeekComments,
@@ -135,6 +136,7 @@ async function fetchChildren(
     'duedate',
     'description',
     'parent',
+    'priority',
     customFields.storyPointsField,
     customFields.epicLinkField,
   ].filter(Boolean) as string[];

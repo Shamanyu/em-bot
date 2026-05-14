@@ -48,6 +48,7 @@ export const EpicSnapshotSchema = z.object({
   epicComponents: z.array(z.string()),
   epicUrl: z.string(),
   epicCreatedAt: z.string(),
+  epicPriority: z.string().nullable(),
   childIssues: z.array(ChildIssueSchema),
   currentWeekComments: z.array(CommentSchema),
   previousWeekComments: z.array(CommentSchema),
