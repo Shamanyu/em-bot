@@ -55,7 +55,7 @@ export function BrandingConfig({ data, onChange, onNext, onBack, submitting }: P
             type="text"
             value={data.orgName}
             onChange={(e) => onChange({ orgName: e.target.value })}
-            placeholder="Acme Engineering"
+            placeholder="Acme Corp"
             className="input"
           />
           <p className="text-xs text-zinc-600 mt-1">Used as the dashboard page title.</p>

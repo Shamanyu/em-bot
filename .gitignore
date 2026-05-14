@@ -3,3 +3,11 @@ dist/
 .env
 *.log
 .DS_Store
+
+# Personal configs — copy from *.example.yaml and fill in your values
+config.yaml
+features/progress-dashboard/dashboard-config.yaml
+features/progress-dashboard/frontend/.env.local
+features/progress-dashboard/frontend/.next/
+features/progress-dashboard/frontend/next-env.d.ts
+features/progress-dashboard/frontend/package-lock.json
