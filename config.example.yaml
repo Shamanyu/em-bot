@@ -3,7 +3,7 @@ enabled: true
 jira:
   filterId: TBD
   rollupTicketKey: TBD
-  projectKeys: [CM, SP, XPS, CA]
+  projectKeys: [PROJ1, PROJ2]
   apiVersion: "3"
   # Raw JQL fragment appended to every Epic query. Tune for your JIRA workflow.
   # Default (omit this field): statusCategory != Done
