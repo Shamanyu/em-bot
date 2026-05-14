@@ -3,7 +3,12 @@ import { TeamProgressWidget } from '@/components/TeamProgressWidget';
 import { TeamGoalsWidget } from '@/components/TeamGoalsWidget';
 import { WeeklyGoalsWidget } from '@/components/WeeklyGoalsWidget';
 import type { DashboardPayload } from '@/lib/types';
-import type { Json } from '@/lib/supabase/types';
+import type { Database, Json } from '@/lib/supabase/types';
+
+type DashRow = Pick<
+  Database['public']['Tables']['dashboard_data']['Row'],
+  'payload' | 'generated_at' | 'run_status' | 'error_msg'
+>;
 
 export default async function DashboardPage({
   searchParams,
@@ -23,7 +28,7 @@ export default async function DashboardPage({
     .from('dashboard_data')
     .select('payload, generated_at, run_status, error_msg')
     .eq('tenant_id', user.id)
-    .single();
+    .single() as { data: DashRow | null; error: unknown };
 
   const isPending =
     !dashRow ||
