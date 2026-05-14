@@ -4,6 +4,8 @@ import { ScopeTooLargeError } from '../../src/errors.js';
 import type { JiraClient } from '../../src/jira/client.js';
 import type { JiraIssueRaw } from '../../src/types/EpicSnapshot.js';
 
+const DEFAULT_STATUS_JQL = 'statusCategory != Done';
+
 function makeEpicIssue(key: string): JiraIssueRaw {
   return {
     id: key,
@@ -33,23 +35,30 @@ describe('resolveScope', () => {
       makeEpicIssue('CM-1'),
       makeEpicIssue('CM-2'),
     ]);
-    const keys = await resolveScope(client, 12345, ['CM'], 20);
+    const keys = await resolveScope(client, 12345, ['CM'], 20, DEFAULT_STATUS_JQL);
     expect(keys).toEqual(['CM-1', 'CM-2']);
   });
 
-  it('constructs JQL with filter, project boundary, epic type, and in-progress filter', async () => {
+  it('constructs JQL with filter, project boundary, epic type, and epicStatusJql', async () => {
     const client = makeClient('project = CM', []);
-    await resolveScope(client, 12345, ['CM', 'SP'], 20);
+    await resolveScope(client, 12345, ['CM', 'SP'], 20, DEFAULT_STATUS_JQL);
     expect(client.searchByJql).toHaveBeenCalledWith(
-      '(project = CM) AND project in (CM, SP) AND issuetype = Epic AND statusCategory = "In Progress"',
+      '(project = CM) AND project in (CM, SP) AND issuetype = Epic AND statusCategory != Done',
       ['summary', 'issuetype'],
       200,
     );
   });
 
+  it('uses a custom epicStatusJql when provided', async () => {
+    const client = makeClient('project = CM', []);
+    await resolveScope(client, 12345, ['CM'], 20, 'statusCategory = "In Progress"');
+    const [[jql]] = (client.searchByJql as ReturnType<typeof vi.fn>).mock.calls;
+    expect(jql).toContain('statusCategory = "In Progress"');
+  });
+
   it('wraps the filter JQL in parentheses to avoid precedence issues', async () => {
     const client = makeClient('project = CM OR project = SP', []);
-    await resolveScope(client, 99, ['CM'], 20);
+    await resolveScope(client, 99, ['CM'], 20, DEFAULT_STATUS_JQL);
     const [[jql]] = (client.searchByJql as ReturnType<typeof vi.fn>).mock.calls;
     expect(jql).toMatch(/^\(/);
     expect(jql).toContain('(project = CM OR project = SP)');
@@ -61,48 +70,48 @@ describe('resolveScope', () => {
       makeNonEpicIssue('CM-2'),
       makeEpicIssue('CM-3'),
     ]);
-    const keys = await resolveScope(client, 12345, ['CM'], 20);
+    const keys = await resolveScope(client, 12345, ['CM'], 20, DEFAULT_STATUS_JQL);
     expect(keys).toEqual(['CM-1', 'CM-3']);
   });
 
   it('returns empty array when no epics match', async () => {
     const client = makeClient('project = CM', []);
-    const keys = await resolveScope(client, 12345, ['CM'], 20);
+    const keys = await resolveScope(client, 12345, ['CM'], 20, DEFAULT_STATUS_JQL);
     expect(keys).toEqual([]);
   });
 
   it('throws ScopeTooLargeError when epic count exceeds maxEpicsPerRun', async () => {
     const epics = Array.from({ length: 21 }, (_, i) => makeEpicIssue(`CM-${i + 1}`));
     const client = makeClient('project = CM', epics);
-    await expect(resolveScope(client, 12345, ['CM'], 20)).rejects.toThrow(ScopeTooLargeError);
+    await expect(resolveScope(client, 12345, ['CM'], 20, DEFAULT_STATUS_JQL)).rejects.toThrow(ScopeTooLargeError);
   });
 
   it('does NOT throw when epic count equals maxEpicsPerRun exactly', async () => {
     const epics = Array.from({ length: 20 }, (_, i) => makeEpicIssue(`CM-${i + 1}`));
     const client = makeClient('project = CM', epics);
-    await expect(resolveScope(client, 12345, ['CM'], 20)).resolves.toHaveLength(20);
+    await expect(resolveScope(client, 12345, ['CM'], 20, DEFAULT_STATUS_JQL)).resolves.toHaveLength(20);
   });
 
   it('ScopeTooLargeError message includes count and max', async () => {
     const epics = Array.from({ length: 25 }, (_, i) => makeEpicIssue(`CM-${i + 1}`));
     const client = makeClient('project = CM', epics);
-    await expect(resolveScope(client, 12345, ['CM'], 20)).rejects.toMatchObject({
+    await expect(resolveScope(client, 12345, ['CM'], 20, DEFAULT_STATUS_JQL)).rejects.toMatchObject({
       message: expect.stringContaining('25'),
     });
-    await expect(resolveScope(client, 12345, ['CM'], 20)).rejects.toMatchObject({
+    await expect(resolveScope(client, 12345, ['CM'], 20, DEFAULT_STATUS_JQL)).rejects.toMatchObject({
       message: expect.stringContaining('20'),
     });
   });
 
   it('fetches filter using the provided filterId', async () => {
     const client = makeClient('project = CM', []);
-    await resolveScope(client, 77777, ['CM'], 20);
+    await resolveScope(client, 77777, ['CM'], 20, DEFAULT_STATUS_JQL);
     expect(client.getFilter).toHaveBeenCalledWith(77777);
   });
 
   it('handles multiple project keys with comma separation', async () => {
     const client = makeClient('sprint in openSprints()', [makeEpicIssue('CM-1')]);
-    await resolveScope(client, 1, ['CM', 'SP', 'INFRA'], 20);
+    await resolveScope(client, 1, ['CM', 'SP', 'INFRA'], 20, DEFAULT_STATUS_JQL);
     const [[jql]] = (client.searchByJql as ReturnType<typeof vi.fn>).mock.calls;
     expect(jql).toContain('project in (CM, SP, INFRA)');
   });

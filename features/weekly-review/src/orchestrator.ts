@@ -62,6 +62,7 @@ export async function run(deps: RunDeps): Promise<RunSummary> {
       config.jira.filterId,
       config.jira.projectKeys,
       config.behaviour.maxEpicsPerRun,
+      config.jira.epicStatusJql,
     );
   } catch (err) {
     log.error({ event: 'fatal', err: (err as Error).message });
