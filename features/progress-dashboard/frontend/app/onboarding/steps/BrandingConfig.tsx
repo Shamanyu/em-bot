@@ -41,14 +41,14 @@ export function BrandingConfig({ data, onChange, onNext, onBack, submitting }: P
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-gray-900 mb-1">Branding</h2>
-      <p className="text-gray-500 text-sm mb-8">
+      <h2 className="text-xl font-semibold text-zinc-100 mb-1">Branding</h2>
+      <p className="text-zinc-400 text-sm mb-8">
         Customise how your dashboard looks. Changes are reflected immediately after setup.
       </p>
 
       <div className="space-y-6 mb-8">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-zinc-300 mb-1">
             Organisation Name
           </label>
           <input
@@ -58,17 +58,17 @@ export function BrandingConfig({ data, onChange, onNext, onBack, submitting }: P
             placeholder="Acme Engineering"
             className="input"
           />
-          <p className="text-xs text-gray-400 mt-1">Used as the dashboard page title.</p>
+          <p className="text-xs text-zinc-600 mt-1">Used as the dashboard page title.</p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Logo</label>
+          <label className="block text-sm font-medium text-zinc-300 mb-2">Logo</label>
           <div
             onDrop={onDrop}
             onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
             className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
-              dragOver ? 'border-indigo-400 bg-indigo-50' : 'border-gray-200 bg-gray-50 hover:border-gray-300'
+              dragOver ? 'border-indigo-500 bg-indigo-950' : 'border-zinc-700 bg-zinc-800 hover:border-zinc-600'
             }`}
           >
             {data.logoPreviewUrl ? (
@@ -77,32 +77,32 @@ export function BrandingConfig({ data, onChange, onNext, onBack, submitting }: P
                 <img src={data.logoPreviewUrl} alt="Logo preview" className="h-14 object-contain" />
                 <button
                   onClick={() => onChange({ logoFile: undefined, logoPreviewUrl: '' })}
-                  className="text-xs text-gray-400 hover:text-gray-600"
+                  className="text-xs text-zinc-500 hover:text-zinc-300"
                 >
                   Remove
                 </button>
               </div>
             ) : (
               <>
-                <p className="text-sm text-gray-500 mb-1">Drag & drop or</p>
-                <label className="text-sm text-indigo-600 hover:underline cursor-pointer font-medium">
+                <p className="text-sm text-zinc-500 mb-1">Drag & drop or</p>
+                <label className="text-sm text-indigo-400 hover:underline cursor-pointer font-medium">
                   browse files
                   <input type="file" accept="image/*" onChange={onInputChange} className="hidden" />
                 </label>
-                <p className="text-xs text-gray-400 mt-1">PNG, JPG, SVG — max 2 MB</p>
+                <p className="text-xs text-zinc-600 mt-1">PNG, JPG, SVG — max 2 MB</p>
               </>
             )}
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-zinc-300 mb-2">
             Dashboard Background Colour
           </label>
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowPicker(!showPicker)}
-              className="w-10 h-10 rounded-lg border border-gray-200 shadow-sm flex-shrink-0"
+              className="w-10 h-10 rounded-lg border border-zinc-600 flex-shrink-0"
               style={{ backgroundColor: data.brandColor }}
             />
             <input
@@ -126,7 +126,7 @@ export function BrandingConfig({ data, onChange, onNext, onBack, submitting }: P
 
       {/* Live preview */}
       <div
-        className="mb-8 rounded-xl p-5 border border-gray-100"
+        className="mb-8 rounded-xl p-5 border border-zinc-700"
         style={{ backgroundColor: data.brandColor }}
       >
         <div className="flex items-center gap-3 mb-3">
@@ -136,27 +136,27 @@ export function BrandingConfig({ data, onChange, onNext, onBack, submitting }: P
           )}
           <span
             className="text-base font-bold"
-            style={{ color: isDark ? '#f9fafb' : '#111827' }}
+            style={{ color: isDark ? '#f4f4f5' : '#18181b' }}
           >
             {data.orgName || 'Your Org'} Engineering Progress
           </span>
         </div>
         <div
           className="text-xs opacity-60"
-          style={{ color: isDark ? '#f9fafb' : '#374151' }}
+          style={{ color: isDark ? '#f4f4f5' : '#3f3f46' }}
         >
           Preview of dashboard header
         </div>
       </div>
 
       <div className="flex gap-3">
-        <button onClick={onBack} disabled={submitting} className="flex-1 py-3 rounded-lg border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-50">
+        <button onClick={onBack} disabled={submitting} className="flex-1 py-3 rounded-xl border border-zinc-800 text-zinc-400 text-sm font-medium hover:bg-zinc-800 transition-colors disabled:opacity-50">
           Back
         </button>
         <button
           onClick={onNext}
           disabled={!data.orgName || submitting}
-          className="flex-1 py-3 rounded-lg bg-indigo-600 text-white font-medium text-sm hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 py-3 rounded-xl bg-indigo-600 text-white font-medium text-sm hover:bg-indigo-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {submitting ? 'Launching…' : 'Launch my dashboard →'}
         </button>

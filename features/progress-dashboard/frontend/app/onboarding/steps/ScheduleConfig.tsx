@@ -29,22 +29,22 @@ export function ScheduleConfig({ data, onChange, onNext, onBack }: Props) {
     }
   }
 
+  const utcOffset = new Date().getTimezoneOffset();
+  const utcTime = computeUtcTime(data.scheduleTimeLocal, utcOffset);
+
   const selectedDayNames = DAYS.filter((d) => data.scheduleDays.includes(d.value))
     .map((d) => d.label)
     .join(', ');
 
-  const utcOffset = new Date().getTimezoneOffset();
-  const utcHour = computeUtcTime(data.scheduleTimeLocal, utcOffset);
-
   return (
     <div>
-      <h2 className="text-xl font-semibold text-gray-900 mb-1">Schedule</h2>
-      <p className="text-gray-500 text-sm mb-8">
-        Choose when your dashboard should refresh. All times are in your local timezone.
+      <h2 className="text-xl font-semibold text-zinc-100 mb-1">Schedule</h2>
+      <p className="text-zinc-400 text-sm mb-8">
+        When should your dashboard refresh? Defaults to weekdays at 4 PM local time.
       </p>
 
       <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-3">Run days</label>
+        <label className="block text-sm font-medium text-zinc-300 mb-3">Run days</label>
         <div className="flex gap-2">
           {DAYS.map(({ label, value }) => (
             <button
@@ -53,7 +53,7 @@ export function ScheduleConfig({ data, onChange, onNext, onBack }: Props) {
               className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors ${
                 data.scheduleDays.includes(value)
                   ? 'bg-indigo-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
               }`}
             >
               {label}
@@ -62,39 +62,36 @@ export function ScheduleConfig({ data, onChange, onNext, onBack }: Props) {
         </div>
       </div>
 
-      <div className="mb-8">
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Run time (local time)
-        </label>
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-zinc-300 mb-1.5">Run time (your local time)</label>
         <input
           type="time"
           value={data.scheduleTimeLocal}
           onChange={(e) => onChange({ scheduleTimeLocal: e.target.value })}
-          className="input w-40"
+          className="input w-36"
         />
-        {utcHour && (
-          <p className="text-xs text-gray-400 mt-1">
-            Stores as {utcHour} UTC
-          </p>
+        {utcTime && (
+          <p className="text-xs text-zinc-600 mt-1">Stored as {utcTime} UTC</p>
         )}
       </div>
 
-      {data.scheduleDays.length > 0 && (
-        <div className="mb-6 p-4 bg-indigo-50 rounded-xl text-sm text-indigo-800">
-          Your dashboard will update every{' '}
-          <strong>{selectedDayNames}</strong> at{' '}
-          <strong>{data.scheduleTimeLocal}</strong> local time.
+      {data.scheduleDays.length > 0 && data.scheduleTimeLocal && (
+        <div className="mb-8 p-4 bg-zinc-800 border border-zinc-700 rounded-xl text-sm text-zinc-300">
+          Your dashboard will refresh every{' '}
+          <span className="text-zinc-100 font-medium">{selectedDayNames}</span>{' '}
+          at{' '}
+          <span className="text-zinc-100 font-medium">{data.scheduleTimeLocal}</span> local time.
         </div>
       )}
 
       <div className="flex gap-3">
-        <button onClick={onBack} className="flex-1 py-3 rounded-lg border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition-colors">
+        <button onClick={onBack} className="flex-1 py-3 rounded-xl border border-zinc-800 text-zinc-400 text-sm font-medium hover:bg-zinc-800 transition-colors">
           Back
         </button>
         <button
           onClick={onNext}
           disabled={data.scheduleDays.length === 0 || !data.scheduleTimeLocal}
-          className="flex-1 py-3 rounded-lg bg-indigo-600 text-white font-medium text-sm hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 py-3 rounded-xl bg-indigo-600 text-white font-medium text-sm hover:bg-indigo-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           Continue →
         </button>
