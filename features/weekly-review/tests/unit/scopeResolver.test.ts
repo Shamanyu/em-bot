@@ -37,11 +37,11 @@ describe('resolveScope', () => {
     expect(keys).toEqual(['CM-1', 'CM-2']);
   });
 
-  it('constructs JQL with filter, project boundary, epic type, and not-done filter', async () => {
+  it('constructs JQL with filter, project boundary, epic type, and in-progress filter', async () => {
     const client = makeClient('project = CM', []);
     await resolveScope(client, 12345, ['CM', 'SP'], 20);
     expect(client.searchByJql).toHaveBeenCalledWith(
-      '(project = CM) AND project in (CM, SP) AND issuetype = Epic AND statusCategory != Done',
+      '(project = CM) AND project in (CM, SP) AND issuetype = Epic AND statusCategory = "In Progress"',
       ['summary', 'issuetype'],
       200,
     );
