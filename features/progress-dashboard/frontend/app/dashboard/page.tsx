@@ -10,6 +10,11 @@ type DashRow = Pick<
   'payload' | 'generated_at' | 'run_status' | 'error_msg'
 >;
 
+type ConfigRow = Pick<
+  Database['public']['Tables']['tenant_config']['Row'],
+  'next_run_at' | 'page_title'
+>;
+
 export default async function DashboardPage({
   searchParams,
 }: {
@@ -41,7 +46,7 @@ export default async function DashboardPage({
     .from('tenant_config')
     .select('next_run_at, page_title')
     .eq('tenant_id', user.id)
-    .single();
+    .single() as { data: ConfigRow | null; error: unknown };
 
   if (isPending) {
     return <PendingState nextRunAt={config?.next_run_at ?? null} justOnboarded={params.onboarded === '1'} />;

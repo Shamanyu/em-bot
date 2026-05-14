@@ -1,7 +1,13 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { createClient } from '@/lib/supabase/server';
+import type { Database } from '@/lib/supabase/types';
 import Image from 'next/image';
+
+type TenantRow = Pick<
+  Database['public']['Tables']['tenants']['Row'],
+  'brand_color' | 'logo_url' | 'org_name'
+>;
 
 export const metadata: Metadata = {
   title: 'Engineering Progress Dashboard',
@@ -23,7 +29,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       .from('tenants')
       .select('brand_color, logo_url, org_name')
       .eq('id', user.id)
-      .single();
+      .single() as { data: TenantRow | null; error: unknown };
 
     if (tenant) {
       brandColor = tenant.brand_color;
