@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Prerequisites } from './steps/Prerequisites';
 import { JiraConnection } from './steps/JiraConnection';
 import { AnthropicConnection } from './steps/AnthropicConnection';
 import { ScopeConfig } from './steps/ScopeConfig';
@@ -10,34 +9,28 @@ import { ScheduleConfig } from './steps/ScheduleConfig';
 import { BrandingConfig } from './steps/BrandingConfig';
 
 export interface OnboardingData {
-  // Step 2 — JIRA
+  // Step 1 — JIRA
   jiraBaseUrl: string;
   jiraEmail: string;
   jiraToken: string;
   jiraDisplayName?: string;
-  // Step 3 — Anthropic
+  // Step 2 — Anthropic
   anthropicKey: string;
-  // Step 4 — Scope
+  // Step 3 — Scope
   projectKeys: string[];
   completedLookbackDays: number;
-  // Step 5 — Schedule
+  epicStatusJql: string;
+  // Step 4 — Schedule
   scheduleDays: number[];
   scheduleTimeLocal: string;
-  // Step 6 — Branding
+  // Step 5 — Branding
   orgName: string;
   logoFile?: File;
   logoPreviewUrl: string;
   brandColor: string;
 }
 
-const STEP_LABELS = [
-  'Prerequisites',
-  'JIRA',
-  'Anthropic',
-  'Scope',
-  'Schedule',
-  'Branding',
-];
+const STEP_LABELS = ['JIRA', 'Anthropic', 'Scope', 'Schedule', 'Branding'];
 
 const DEFAULT_DATA: OnboardingData = {
   jiraBaseUrl: '',
@@ -46,11 +39,12 @@ const DEFAULT_DATA: OnboardingData = {
   anthropicKey: '',
   projectKeys: [],
   completedLookbackDays: 30,
+  epicStatusJql: 'statusCategory = "In Progress"',
   scheduleDays: [1, 2, 3, 4, 5],
   scheduleTimeLocal: '16:00',
   orgName: '',
   logoPreviewUrl: '',
-  brandColor: '#ffffff',
+  brandColor: '#09090b',
 };
 
 export default function OnboardingPage() {
@@ -105,27 +99,33 @@ export default function OnboardingPage() {
   const totalSteps = STEP_LABELS.length;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-zinc-950 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-lg">
+
         {/* Step indicator */}
         <div className="flex items-center gap-1.5 mb-8 justify-center">
           {STEP_LABELS.map((label, i) => (
             <div key={i} className="flex items-center gap-1.5">
-              <div
-                className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold transition-colors ${
-                  i < step
-                    ? 'bg-indigo-600 text-white'
-                    : i === step
-                    ? 'bg-indigo-100 text-indigo-700 ring-2 ring-indigo-300'
-                    : 'bg-gray-100 text-gray-400'
-                }`}
-              >
-                {i < step ? '✓' : i + 1}
+              <div className="flex flex-col items-center gap-1">
+                <div
+                  className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold transition-colors ${
+                    i < step
+                      ? 'bg-indigo-500 text-white'
+                      : i === step
+                      ? 'bg-zinc-800 text-indigo-400 ring-2 ring-indigo-500'
+                      : 'bg-zinc-900 text-zinc-600'
+                  }`}
+                >
+                  {i < step ? '✓' : i + 1}
+                </div>
+                <span className={`text-[10px] font-medium ${i === step ? 'text-indigo-400' : 'text-zinc-600'}`}>
+                  {label}
+                </span>
               </div>
               {i < totalSteps - 1 && (
                 <div
-                  className={`h-0.5 w-6 rounded-full transition-colors ${
-                    i < step ? 'bg-indigo-600' : 'bg-gray-200'
+                  className={`h-0.5 w-8 rounded-full mb-4 transition-colors ${
+                    i < step ? 'bg-indigo-500' : 'bg-zinc-800'
                   }`}
                 />
               )}
@@ -133,24 +133,23 @@ export default function OnboardingPage() {
           ))}
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-          {step === 0 && <Prerequisites onNext={() => setStep(1)} />}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8">
+          {step === 0 && (
+            <JiraConnection data={data} onChange={update} onNext={() => setStep(1)} />
+          )}
           {step === 1 && (
-            <JiraConnection data={data} onChange={update} onNext={() => setStep(2)} onBack={() => setStep(0)} />
+            <AnthropicConnection data={data} onChange={update} onNext={() => setStep(2)} onBack={() => setStep(0)} />
           )}
           {step === 2 && (
-            <AnthropicConnection data={data} onChange={update} onNext={() => setStep(3)} onBack={() => setStep(1)} />
+            <ScopeConfig data={data} onChange={update} onNext={() => setStep(3)} onBack={() => setStep(1)} />
           )}
           {step === 3 && (
-            <ScopeConfig data={data} onChange={update} onNext={() => setStep(4)} onBack={() => setStep(2)} />
+            <ScheduleConfig data={data} onChange={update} onNext={() => setStep(4)} onBack={() => setStep(2)} />
           )}
           {step === 4 && (
-            <ScheduleConfig data={data} onChange={update} onNext={() => setStep(5)} onBack={() => setStep(3)} />
-          )}
-          {step === 5 && (
             <>
               {submitError && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                <div className="mb-4 p-3 bg-red-950 border border-red-800 rounded-xl text-sm text-red-400">
                   {submitError}
                 </div>
               )}
@@ -158,12 +157,13 @@ export default function OnboardingPage() {
                 data={data}
                 onChange={update}
                 onNext={submit}
-                onBack={() => setStep(4)}
+                onBack={() => setStep(3)}
                 submitting={submitting}
               />
             </>
           )}
         </div>
+
       </div>
     </div>
   );
