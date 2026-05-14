@@ -1,7 +1,7 @@
 enabled: true
 
 jira:
-  projectKeys: [CM, XPS, SP]
+  projectKeys: [PROJ1, PROJ2]
   activeEpicsMax: 30
 
 schedule:
