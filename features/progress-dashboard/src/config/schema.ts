@@ -13,18 +13,22 @@ export const DashboardConfigSchema = z.object({
     commentLookbackDays: z.number().int().min(1).max(30).default(7),
   }),
 
-  llm: z.object({
-    model: z.string().default('claude-sonnet-4-6'),
-    maxTokens: z.number().int().default(4096),
-    maxRetries: z.number().int().min(0).max(3).default(1),
-  }),
+  llm: z
+    .object({
+      model: z.string().default('claude-sonnet-4-6'),
+      maxTokens: z.number().int().default(4096),
+      maxRetries: z.number().int().min(0).max(3).default(1),
+    })
+    .default({}),
 
-  output: z.object({
-    pageTitle: z.string().default('Engineering Progress Dashboard'),
-    outputPath: z
-      .string()
-      .default('features/progress-dashboard/frontend/public/dashboard.json'),
-  }),
+  output: z
+    .object({
+      pageTitle: z.string().default('Engineering Progress Dashboard'),
+      outputPath: z
+        .string()
+        .default('features/progress-dashboard/frontend/public/dashboard.json'),
+    })
+    .default({}),
 });
 
 export type DashboardConfig = z.infer<typeof DashboardConfigSchema>;

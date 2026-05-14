@@ -1,89 +1,65 @@
 # EM Bot
 
-EM Bot automates the weekly Epic review that every engineering manager does manually. It reads your in-flight Epics from JIRA, analyses each one using Claude, and posts a structured comment with a risk rating, observations, and concrete recommendations — directly on the Epic. A team rollup comment is also posted to a single summary ticket.
+Two tools for engineering managers who manage teams through JIRA:
 
-**The EM's job shifts from producing the review to editing it.**
-
-## Prerequisite: your team must post weekly updates on JIRA Epics
-
-EM Bot is only as good as the data it reads. For the analysis to be meaningful, engineers need to post a brief weekly comment on their Epic (or a child story) each week covering:
-- What was completed
-- What's planned next
-- Any blockers
-
-Without these updates, the bot will correctly flag missing updates — but the analysis will be shallow. Establish this habit before or alongside rolling out the bot.
+1. **Weekly Review Bot** — reads in-flight Epics, analyses each one with Claude, and posts a structured comment directly on the Epic. Runs on a weekly cron via GitHub Actions.
+2. **Progress Dashboard** — a self-serve SaaS web app. Any EM signs up, connects their JIRA and Anthropic credentials, and gets a daily-updated dashboard with three widgets: what shipped, where Epics stand, and what each engineer committed to this week.
 
 ---
 
-## How it works
+## Weekly Review Bot
 
-1. Resolves in-scope Epics from a JIRA saved filter (you control the JQL)
+### How it works
+
+1. Resolves in-scope Epics from a JIRA saved filter you control
 2. For each Epic: fetches child stories, this week's and last week's comments, and computes heuristics (% complete, stale stories, missing acceptance criteria)
 3. Calls Claude with the snapshot — tool-use enforces a schema-valid JSON analysis
-4. Posts a rich ADF-formatted comment on the Epic: risk level 🟢🟡🔴, observations per dimension, and prioritised recommendations
-5. Posts a team rollup on a single summary ticket
+4. Posts a rich ADF-formatted comment on the Epic: risk level 🟢🟡🔴, observations, and prioritised recommendations
+5. Posts a team rollup summary on a single designated ticket
 
-Re-running within the same week is safe — already-analysed Epics are skipped.
+Re-running within the same week is safe — already-commented Epics are skipped.
 
----
+**Prerequisite:** engineers must post a brief weekly comment on each Epic covering what was completed, what's next, and any blockers. Without updates the bot flags them as missing.
 
-## Setup
+### Setup
 
-### 1. Prerequisites
-
-- Node.js 20+
-- A JIRA Cloud account with API token access
-- An Anthropic API key ([console.anthropic.com](https://console.anthropic.com))
-- A GitHub account (for the automated weekly cron)
-
-### 2. Clone and install
-
+**1. Clone and install**
 ```bash
 git clone https://github.com/Shamanyu/em-bot.git && cd em-bot
 npm install
 ```
 
-### 3. Create your JIRA saved filter
+**2. Create a JIRA saved filter**
 
-In JIRA, create a saved filter with JQL that selects the Epics you want to analyse. Example:
-
+In JIRA, create a filter selecting the Epics you want to analyse. Example JQL:
 ```
 issuetype = Epic AND statusCategory != Done AND labels = "em-review"
 ```
+Note the integer filter ID from the URL (`yourcompany.atlassian.net/issues/?filter=`**12345**).
 
-Note the integer filter ID from the URL: `yourcompany.atlassian.net/issues/?filter=`**`12345`**
+**3. Create a rollup ticket**
 
-### 4. Create a rollup ticket
+Create a JIRA ticket (type: Task) where the weekly team summary gets posted. Keep it open permanently.
 
-Create a JIRA ticket (type: Task, summary: "EM Bot Weekly Rollup"). This is where the team-level summary comment gets posted each week. Keep it open permanently. Note the ticket key (e.g. `ENG-42`).
-
-### 5. Configure credentials
-
+**4. Configure credentials**
 ```bash
 cp .env.example .env
 ```
-
 Edit `.env`:
-
 ```
 JIRA_BASE_URL=https://yourcompany.atlassian.net
 JIRA_USER_EMAIL=you@yourcompany.com
-JIRA_API_TOKEN=<your Atlassian API token>
-ANTHROPIC_API_KEY=<your Anthropic API key>
+JIRA_API_TOKEN=<Atlassian API token>
+ANTHROPIC_API_KEY=<Anthropic API key>
 DRY_RUN=false
-LOG_LEVEL=info
 ```
-
 Get your Atlassian token at: [id.atlassian.com/manage-profile/security/api-tokens](https://id.atlassian.com/manage-profile/security/api-tokens)
 
-### 6. Configure the app
-
+**5. Configure the app**
 ```bash
 cp config.example.yaml config.yaml
 ```
-
 Edit `config.yaml` — the two required fields:
-
 ```yaml
 jira:
   filterId: 12345           # your saved filter ID
@@ -91,85 +67,161 @@ jira:
   projectKeys: [ENG]        # safety boundary — only Epics in these projects
 ```
 
-Everything else has sensible defaults.
-
-### 7. Verify locally with a dry run
-
+**6. Dry run**
 ```bash
 DRY_RUN=true npm run dev
 ```
+Hits real JIRA and Claude but writes nothing. Review the proposed comments before going live.
 
-This hits the real JIRA and real Claude but writes nothing. Review the proposed comments in stdout before going live.
+### Automated weekly cron (GitHub Actions)
 
-### 8. Go live
+The repo includes `.github/workflows/em-bot-weekly.yml` — fires every Tuesday at 05:30 UTC on GitHub's hosted runners.
 
-```bash
-npm run dev
+**To activate:**
+1. Push to GitHub
+2. Go to **Settings → Secrets → Actions** and add: `JIRA_BASE_URL`, `JIRA_USER_EMAIL`, `JIRA_API_TOKEN`, `ANTHROPIC_API_KEY`
+
+**Manual trigger:** Actions → EM Bot Weekly Run → Run workflow (dry-run checkbox available).
+
+**Disable:** Actions → EM Bot Weekly Run → ⋯ → Disable workflow.
+
+### Tuning the analysis
+
+Edit `prompts/system-prompt.md`. Changes take effect on the next run — no rebuild needed.
+
+---
+
+## Progress Dashboard (SaaS)
+
+A web app where any EM can sign up and get a live dashboard for their team.
+
+### What it shows
+
+| Widget | What it answers |
+|--------|----------------|
+| **Team Progress** | What shipped in the last 30 days, grouped into themes |
+| **Team Goals** | All active Epics — status, health, blockers, progress |
+| **Weekly Goals** | Per-engineer view of this week's commitments, drawn from actual JIRA update comments |
+
+### Architecture
+
+```
+User signs up (Supabase Auth — Google/GitHub OAuth)
+  → /onboarding — 6-step wizard collects JIRA creds, Anthropic key,
+    project scope, schedule, and branding
+  → Credentials encrypted in Supabase Vault; config stored in DB
+
+GitHub Actions meta-runner (every 30 min)
+  → Queries Supabase for tenants whose next_run_at <= now()
+  → For each tenant: decrypts credentials, runs pipeline, writes
+    dashboard payload to dashboard_data table in Supabase
+
+User visits /dashboard
+  → Auth middleware verifies session
+  → Server component reads dashboard_data for the current user
+  → Renders 3 widgets with tenant branding (logo + background colour)
 ```
 
----
+### Tech stack
 
-## Automated weekly runs (GitHub Actions)
+- **Frontend:** Next.js 15 (App Router, server components), React 19, Tailwind CSS
+- **Backend:** Supabase (Auth, PostgreSQL, Vault for secret encryption, Storage for logos)
+- **Pipeline:** Node.js 20, TypeScript, same codebase as the weekly-review bot
+- **Deployment:** Vercel (frontend) + GitHub Actions (pipeline cron)
 
-The repo includes `.github/workflows/em-bot-weekly.yml`, which tells GitHub to run the bot automatically every Tuesday at 05:30 UTC on GitHub's own servers — no server or cron daemon needed on your end.
+### One-time setup (for the repo owner)
 
-**To activate it:**
+**1. Create a Supabase project**
 
-1. Push this repo to GitHub (or fork it)
-2. Go to **Settings → Secrets and variables → Actions** and add four secrets:
-   - `JIRA_BASE_URL`
-   - `JIRA_USER_EMAIL`
-   - `JIRA_API_TOKEN`
-   - `ANTHROPIC_API_KEY`
-3. That's it. The workflow fires automatically every Tuesday.
+Go to [supabase.com](https://supabase.com) and create a new project.
 
-**To trigger a manual run:** go to **Actions → EM Bot Weekly Run → Run workflow**. You'll see a "Dry run" checkbox — check it to preview without writing to JIRA.
+**2. Run the migration**
 
-**To disable the bot:** go to **Actions → EM Bot Weekly Run → ⋯ → Disable workflow**. No code change needed.
+In the Supabase SQL editor, run the contents of:
+```
+supabase/migrations/20260514000000_initial_schema.sql
+```
+This creates the `tenants`, `tenant_config`, and `dashboard_data` tables with Row-Level Security, enables Supabase Vault, and creates the `logos` storage bucket.
 
-**To change the schedule:** edit the `cron` line in `.github/workflows/em-bot-weekly.yml`. The format is standard Unix cron: `minute hour day month weekday`. Times are UTC.
+**3. Enable OAuth providers**
 
----
+In Supabase → Authentication → Providers, enable **Google** and **GitHub**. Add your Vercel deployment URL as an allowed redirect URL:
+```
+https://your-app.vercel.app/auth/callback
+```
 
-## Adding or removing Epics from scope
+**4. Deploy to Vercel**
 
-Edit the JQL in your JIRA saved filter. Add a label (e.g. `em-review`) to any Epic to include it; remove the label to exclude it. No code or config change needed — the filter is re-evaluated on every run.
+- Import the repo in Vercel
+- Set **Root Directory** to `features/progress-dashboard/frontend/`
+- Add environment variables:
 
----
+| Variable | Value |
+|----------|-------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon/public key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key |
 
-## Tuning the analysis
+**5. Add GitHub Secrets for the pipeline**
 
-Edit `prompts/system-prompt.md` to adjust the evaluation rubric, risk level thresholds, tone, or recommendation style. Changes take effect on the next run with no deployment needed.
+In your GitHub repo → Settings → Secrets → Actions:
 
----
+| Secret | Value |
+|--------|-------|
+| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_SERVICE_KEY` | Supabase service role key |
 
-## Disabling the bot without touching GitHub
+**Done.** Users can now sign up at your Vercel URL, complete the 6-step onboarding, and their dashboard will update on their chosen schedule.
 
-Set `enabled: false` in `config.yaml` and push. The bot starts, logs `{ "event": "disabled" }`, and exits cleanly without touching JIRA.
+### Local development
 
----
+```bash
+# Frontend
+cd features/progress-dashboard/frontend
+npm install
+cp .env.local.example .env.local   # fill in Supabase vars
+npm run dev
 
-## Troubleshooting
-
-**No Epics found** — Check that the saved filter `filterId` is correct and that the Epics have the expected label. Verify `projectKeys` covers the right projects.
-
-**Duplicate comments** — Verify `behaviour.skipIfAlreadyPosted: true` in `config.yaml` and that `botIdentity.commentTag` hasn't changed between runs.
-
-**JIRA 401** — API token is expired. Regenerate at Atlassian and update your `.env` / GitHub secret.
-
-**JIRA 403** — The token's account doesn't have permission to comment on an Epic or the rollup ticket.
-
-**`ScopeTooLargeError`** — The filter returned more Epics than `behaviour.maxEpicsPerRun` (default 20). Tighten the JQL or raise the limit.
-
-**Analysis quality is poor** — Edit `prompts/system-prompt.md`. Rate a sample of comments on accuracy, specificity, tone, and actionability (1–5). Iterate until average ≥ 4.0 before enabling for the full team.
+# Pipeline (single-tenant / local mode)
+cp .env.example .env               # fill in JIRA + Anthropic vars
+cp features/progress-dashboard/dashboard-config.yaml.example features/progress-dashboard/dashboard-config.yaml
+DRY_RUN=true npm run dev:dashboard
+```
 
 ---
 
 ## Development
 
 ```bash
-npm run typecheck   # TypeScript strict check
-npm run test        # 61 unit + integration tests (no credentials needed)
+npm run build       # TypeScript → dist/
+npm run typecheck   # Strict type check (no emit)
+npm test            # 250+ unit + integration tests (no credentials needed)
 npm run lint        # ESLint
-npm run build       # Compile to dist/
+```
+
+Tests require no credentials — all JIRA and LLM calls are mocked.
+
+---
+
+## Repo structure
+
+```
+em-bot/
+  features/
+    weekly-review/          # Weekly Epic analysis bot
+      src/                  # Pipeline source
+      tests/                # Unit + integration tests
+      prompts/              # system-prompt.md (edit to tune analysis)
+    progress-dashboard/
+      src/                  # Daily dashboard pipeline
+      tests/                # Unit tests
+      frontend/             # Next.js SaaS app (deployed to Vercel)
+      dashboard-config.yaml # Config for local/single-tenant runs
+  shared/                   # Shared: JiraClient, logger, retry, errors
+  supabase/
+    migrations/             # SQL schema — run once in Supabase SQL editor
+  .github/workflows/
+    ci.yml                  # Lint + typecheck + test on every PR
+    em-bot-weekly.yml       # Weekly review cron (Tuesday 05:30 UTC)
+    progress-dashboard.yml  # Dashboard meta-runner (every 30 min)
 ```
