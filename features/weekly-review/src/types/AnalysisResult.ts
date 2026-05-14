@@ -18,10 +18,6 @@ export const AnalysisResultSchema = z.object({
   blockersResolved: z.array(z.string()),
 
   // Secondary: housekeeping
-  scheduleHealth: z.object({
-    assessment: z.enum(['ON_TRACK', 'AT_RISK', 'LIKELY_TO_SLIP', 'NO_DUE_DATE']),
-    rationale: z.string(),
-  }),
   housekeepingItems: z.array(
     z.object({
       issueKey: z.string(),

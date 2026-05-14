@@ -126,7 +126,6 @@ function makeAnalysis(overrides: Partial<AnalysisResult> = {}): AnalysisResult {
     followUpQuestions: ['Any dependency risks?'],
     blockersRaised: [],
     blockersResolved: [],
-    scheduleHealth: { assessment: 'ON_TRACK', rationale: 'Burn rate is steady.' },
     housekeepingItems: [],
     housekeepingNote: 'No housekeeping concerns.',
     ...overrides,
@@ -298,16 +297,16 @@ describe('buildEpicComment()', () => {
     expect(doc.content.some((n) => n.type === 'rule')).toBe(true);
   });
 
-  it('includes "Additional Notes" heading and scheduleHealth', () => {
+  it('omits "Additional Notes" heading and schedule health assessment', () => {
     const doc = buildEpicComment(makeAnalysis(), 'https://jira.example.com/browse/CM-100', '[TAG]', '— Bot', '2026-05-07');
     const hasAdditional = doc.content.some(
       (n) => n.type === 'heading' && n.content?.some((c) => c.text?.includes('Additional Notes')),
     );
-    expect(hasAdditional).toBe(true);
+    expect(hasAdditional).toBe(false);
     const hasSchedule = doc.content.some(
       (n) => n.type === 'paragraph' && n.content?.some((c) => c.text?.includes('ON_TRACK')),
     );
-    expect(hasSchedule).toBe(true);
+    expect(hasSchedule).toBe(false);
   });
 
   it('includes Housekeeping section when housekeepingItems is non-empty', () => {

@@ -10,12 +10,6 @@ import {
   rule,
 } from '../jira/adfBuilder.js';
 
-const SCHEDULE_BADGE: Record<string, string> = {
-  ON_TRACK: '✅',
-  AT_RISK: '⚠️',
-  LIKELY_TO_SLIP: '🔴',
-  NO_DUE_DATE: '⬜',
-};
 
 export function buildRollupComment(
   rollup: TeamRollup,
@@ -67,7 +61,7 @@ function buildUpdatesTable(
 ): AdfNode {
   const headerRow: AdfNode = {
     type: 'tableRow',
-    content: ['Epic', 'Assignee', 'Schedule', 'Update Summary'].map((h) => ({
+    content: ['Epic', 'Assignee', 'Update Summary'].map((h) => ({
       type: 'tableHeader',
       attrs: {},
       content: [paragraph(strong(h))],
@@ -90,11 +84,6 @@ function buildUpdatesTable(
         type: 'tableCell',
         attrs: {},
         content: [paragraph(text(e.assignee ?? 'Unassigned'))],
-      },
-      {
-        type: 'tableCell',
-        attrs: {},
-        content: [paragraph(strong(`${SCHEDULE_BADGE[e.scheduleHealth] ?? ''} ${e.scheduleHealth}`))],
       },
       {
         type: 'tableCell',

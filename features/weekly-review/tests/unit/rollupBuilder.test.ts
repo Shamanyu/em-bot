@@ -31,7 +31,7 @@ function makeSnapshot(epicKey: string, assignee: string | null = null): EpicSnap
   };
 }
 
-function makeAnalysis(epicKey: string, scheduleHealth: 'ON_TRACK' | 'AT_RISK' | 'LIKELY_TO_SLIP' | 'NO_DUE_DATE' = 'ON_TRACK', weeklyUpdateFound = true): AnalysisResult {
+function makeAnalysis(epicKey: string, _scheduleHealth?: string, weeklyUpdateFound = true): AnalysisResult {
   return {
     epicKey,
     weeklyUpdateFound,
@@ -43,7 +43,6 @@ function makeAnalysis(epicKey: string, scheduleHealth: 'ON_TRACK' | 'AT_RISK' | 
     followUpQuestions: ['How is Z going?'],
     blockersRaised: [],
     blockersResolved: [],
-    scheduleHealth: { assessment: scheduleHealth, rationale: 'ok' },
     housekeepingItems: [],
     housekeepingNote: 'No issues.',
   };
@@ -65,8 +64,6 @@ describe('buildRollup', () => {
     ];
     const rollup = buildRollup(outcomes, '2026-05-07');
     expect(rollup.updatesFound).toBe(2);
-    expect(rollup.scheduleHealthCounts.ON_TRACK).toBe(1);
-    expect(rollup.scheduleHealthCounts.AT_RISK).toBe(1);
   });
 
   it('counts escalated epics separately', () => {

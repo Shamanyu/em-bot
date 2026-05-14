@@ -16,10 +16,6 @@
   ],
   "blockersRaised": ["API access from platform team"],
   "blockersResolved": [],
-  "scheduleHealth": {
-    "assessment": "LIKELY_TO_SLIP",
-    "rationale": "Epic is due 2026-05-20 (13 days away) with 25% completion and the largest story (CM-1240) not yet started."
-  },
   "housekeepingItems": [
     {
       "issueKey": "CM-1240",

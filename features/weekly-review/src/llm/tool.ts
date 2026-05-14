@@ -36,7 +36,7 @@ export const epicAnalysisTool: Anthropic.Tool = {
       emResponse: {
         type: 'string',
         description:
-          'Your direct EM response to the weekly update. 2–4 sentences. Candid and factual. React to what they said: acknowledge progress, name concerns, flag if a goal is vague, probe on blockers. Write as if sending this to the engineer after a 1:1.',
+          'Your warm, supportive EM response to the weekly update. 1–2 sentences. Acknowledge progress, note the next thing to watch, or gently surface a concern. Write as a trusted friend and colleague who genuinely wants them to succeed — not a manager auditing their work. Do NOT include housekeeping observations here.',
       },
       followUpQuestions: {
         type: 'array',
@@ -56,17 +56,6 @@ export const epicAnalysisTool: Anthropic.Tool = {
       },
 
       // Secondary: housekeeping
-      scheduleHealth: {
-        type: 'object',
-        properties: {
-          assessment: {
-            type: 'string',
-            enum: ['ON_TRACK', 'AT_RISK', 'LIKELY_TO_SLIP', 'NO_DUE_DATE'],
-          },
-          rationale: { type: 'string' },
-        },
-        required: ['assessment', 'rationale'],
-      },
       housekeepingItems: {
         type: 'array',
         items: {
@@ -96,7 +85,6 @@ export const epicAnalysisTool: Anthropic.Tool = {
       'followUpQuestions',
       'blockersRaised',
       'blockersResolved',
-      'scheduleHealth',
       'housekeepingItems',
       'housekeepingNote',
     ],

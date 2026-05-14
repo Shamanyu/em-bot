@@ -106,12 +106,6 @@ export function buildEpicComment(
 
   nodes.push(rule());
 
-  // Secondary: additional notes
-  nodes.push(heading(4, text('Additional Notes')));
-  nodes.push(
-    paragraph(strong(`Schedule: ${analysis.scheduleHealth.assessment} — `), text(analysis.scheduleHealth.rationale)),
-  );
-
   if (analysis.housekeepingItems.length > 0) {
     nodes.push(heading(4, text('Housekeeping')));
     nodes.push(

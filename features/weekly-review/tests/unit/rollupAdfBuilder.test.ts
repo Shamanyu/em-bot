@@ -9,7 +9,6 @@ function makeRollup(overrides: Partial<TeamRollup> = {}): TeamRollup {
     updatesFound: 0,
     escalationsPosted: 0,
     skipped: 0,
-    scheduleHealthCounts: { ON_TRACK: 0, AT_RISK: 0, LIKELY_TO_SLIP: 0, NO_DUE_DATE: 0 },
     epicsWithUpdates: [],
     epicsEscalated: [],
     failedEpics: [],
@@ -80,7 +79,6 @@ describe('buildRollupComment — "Updates Responded To" section', () => {
         epicKey: 'CM-1',
         epicSummary: 'Epic One',
         assignee: 'Alice',
-        scheduleHealth: 'ON_TRACK',
         updateSummary: 'All done.',
       }],
     });
@@ -95,8 +93,8 @@ describe('buildRollupComment — "Updates Responded To" section', () => {
   it('table has header row plus one data row per epic', () => {
     const rollup = makeRollup({
       epicsWithUpdates: [
-        { epicKey: 'CM-1', epicSummary: 'A', assignee: 'Alice', scheduleHealth: 'ON_TRACK', updateSummary: 'ok' },
-        { epicKey: 'CM-2', epicSummary: 'B', assignee: 'Bob', scheduleHealth: 'AT_RISK', updateSummary: 'at risk' },
+        { epicKey: 'CM-1', epicSummary: 'A', assignee: 'Alice', updateSummary: 'ok' },
+        { epicKey: 'CM-2', epicSummary: 'B', assignee: 'Bob', updateSummary: 'at risk' },
       ],
     });
     const doc = buildRollupComment(rollup, TAG, SIG, BASE_URL);
@@ -108,7 +106,7 @@ describe('buildRollupComment — "Updates Responded To" section', () => {
   it('table header row uses tableHeader cells', () => {
     const rollup = makeRollup({
       epicsWithUpdates: [
-        { epicKey: 'CM-1', epicSummary: 'A', assignee: null, scheduleHealth: 'NO_DUE_DATE', updateSummary: '' },
+        { epicKey: 'CM-1', epicSummary: 'A', assignee: null, updateSummary: '' },
       ],
     });
     const doc = buildRollupComment(rollup, TAG, SIG, BASE_URL);
@@ -119,7 +117,7 @@ describe('buildRollupComment — "Updates Responded To" section', () => {
   it('data rows use tableCell and contain inlineCard for epic URL', () => {
     const rollup = makeRollup({
       epicsWithUpdates: [
-        { epicKey: 'CM-5', epicSummary: 'Epic Five', assignee: 'Carol', scheduleHealth: 'ON_TRACK', updateSummary: 'good' },
+        { epicKey: 'CM-5', epicSummary: 'Epic Five', assignee: 'Carol', updateSummary: 'good' },
       ],
     });
     const doc = buildRollupComment(rollup, TAG, SIG, BASE_URL);
@@ -135,7 +133,7 @@ describe('buildRollupComment — "Updates Responded To" section', () => {
   it('shows "Unassigned" when assignee is null', () => {
     const rollup = makeRollup({
       epicsWithUpdates: [
-        { epicKey: 'CM-1', epicSummary: 'A', assignee: null, scheduleHealth: 'NO_DUE_DATE', updateSummary: '' },
+        { epicKey: 'CM-1', epicSummary: 'A', assignee: null, updateSummary: '' },
       ],
     });
     const doc = buildRollupComment(rollup, TAG, SIG, BASE_URL);

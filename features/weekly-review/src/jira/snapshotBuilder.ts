@@ -36,16 +36,21 @@ export async function buildSnapshot(
     isInWindow(new Date(c.createdAt), windows.previousStart, windows.previousEnd),
   );
 
+  // Only Epic-level comments count as the owner's weekly update — child ticket
+  // comments are implementation details, not status updates to the EM.
+  const epicCurrentWeekComments = currentWeekComments.filter((c) => c.issueKey === epicKey);
+  const epicPreviousWeekComments = previousWeekComments.filter((c) => c.issueKey === epicKey);
+
   const epicAssigneeAccountId =
     (fields['assignee'] as { accountId: string } | null)?.accountId ?? null;
 
   const ownerUpdatesThisWeek =
     epicAssigneeAccountId !== null
-      ? currentWeekComments.filter((c) => c.authorAccountId === epicAssigneeAccountId)
+      ? epicCurrentWeekComments.filter((c) => c.authorAccountId === epicAssigneeAccountId)
       : [];
   const ownerUpdatesPreviousWeek =
     epicAssigneeAccountId !== null
-      ? previousWeekComments.filter((c) => c.authorAccountId === epicAssigneeAccountId)
+      ? epicPreviousWeekComments.filter((c) => c.authorAccountId === epicAssigneeAccountId)
       : [];
   const latestOwnerUpdateAt =
     ownerUpdatesThisWeek.length > 0
