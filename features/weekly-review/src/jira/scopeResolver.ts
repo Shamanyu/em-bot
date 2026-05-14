@@ -6,11 +6,11 @@ export async function resolveScope(
   filterId: number,
   projectKeys: string[],
   maxEpicsPerRun: number,
+  epicStatusJql: string,
 ): Promise<string[]> {
   const filter = await client.getFilter(filterId);
   const projectBoundary = `project in (${projectKeys.join(', ')})`;
-  // Always enforce: correct projects, Epics only, In Progress only — regardless of filter JQL
-  const jql = `(${filter.jql}) AND ${projectBoundary} AND issuetype = Epic AND statusCategory = "In Progress"`;
+  const jql = `(${filter.jql}) AND ${projectBoundary} AND issuetype = Epic AND ${epicStatusJql}`;
 
   const result = await client.searchByJql(jql, ['summary', 'issuetype'], 200);
 

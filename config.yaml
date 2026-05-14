@@ -5,6 +5,7 @@ jira:
   rollupTicketKey: CM-1571
   projectKeys: [CM, SP, XPS, CA]
   apiVersion: "3"
+  epicStatusJql: 'statusCategory = "In Progress"'
 
 schedule:
   lookbackDays: 7

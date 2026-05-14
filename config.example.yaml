@@ -5,6 +5,12 @@ jira:
   rollupTicketKey: TBD
   projectKeys: [CM, SP, XPS, CA]
   apiVersion: "3"
+  # Raw JQL fragment appended to every Epic query. Tune for your JIRA workflow.
+  # Default (omit this field): statusCategory != Done
+  # Examples:
+  #   statusCategory = "In Progress"          — only actively worked Epics
+  #   status in ("In Progress", "In Review")  — custom status names
+  epicStatusJql: 'statusCategory != Done'
 
 schedule:
   lookbackDays: 7
