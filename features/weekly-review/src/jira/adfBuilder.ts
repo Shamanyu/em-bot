@@ -92,20 +92,16 @@ export function buildEpicComment(
     nodes.push(paragraph(strong('Due date change: '), text(analysis.dueDateChange)));
   }
 
-  // Follow-up questions
+  // Things to mull over
   if (analysis.followUpQuestions.length > 0) {
-    nodes.push(heading(4, text('Questions for next 1:1')));
-    nodes.push(orderedList(analysis.followUpQuestions.map((q) => [text(q)])));
+    nodes.push(heading(4, text('Things to consider')));
+    nodes.push(bulletList(analysis.followUpQuestions.map((q) => [text(q)])));
   }
 
   // Blockers
   if (analysis.blockersRaised.length > 0) {
     nodes.push(heading(4, text('Blockers surfaced')));
     nodes.push(bulletList(analysis.blockersRaised.map((b) => [text(b)])));
-  }
-  if (analysis.blockersResolved.length > 0) {
-    nodes.push(heading(4, text('Blockers resolved')));
-    nodes.push(bulletList(analysis.blockersResolved.map((b) => [text(b)])));
   }
 
   nodes.push(rule());
