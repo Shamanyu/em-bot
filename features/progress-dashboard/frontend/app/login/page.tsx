@@ -82,7 +82,7 @@ export default function LoginPage() {
             <Prereq
               icon="📋"
               title="JIRA Project Keys"
-              description="The short prefixes for the projects you want to track — e.g. CM, XPS, SP. Found in your JIRA project URLs."
+              description="The short prefixes for the projects you want to track — e.g. ACME, ENG, INFRA. Found in your JIRA project URLs."
             />
           </div>
         </div>
