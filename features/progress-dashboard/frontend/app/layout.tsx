@@ -20,7 +20,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     data: { user },
   } = await supabase.auth.getUser();
 
-  let brandColor = '#f9fafb';
+  let brandColor = '#09090b';
   let logoUrl: string | null = null;
   let orgName: string | null = null;
 
