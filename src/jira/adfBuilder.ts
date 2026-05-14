@@ -54,13 +54,9 @@ export function rule(): AdfNode {
   return { type: 'rule' };
 }
 
-// --- Risk badge ---
-
-const RISK_BADGE: Record<string, string> = {
-  GREEN: '🟢 GREEN',
-  YELLOW: '🟡 YELLOW',
-  RED: '🔴 RED',
-};
+export function blockquote(...nodes: AdfNode[]): AdfNode {
+  return { type: 'blockquote', content: nodes };
+}
 
 // --- Per-Epic comment ---
 
@@ -71,100 +67,69 @@ export function buildEpicComment(
   signature: string,
   runDate: string,
 ): AdfDocument {
-  const badge = RISK_BADGE[analysis.overallRiskLevel] ?? analysis.overallRiskLevel;
   const nodes: AdfNode[] = [];
 
   // H3 heading
-  nodes.push(heading(3, text(`${commentTag} Weekly Analysis — ${runDate} `), strong(badge)));
+  nodes.push(heading(3, text(`${commentTag} EM Response — ${runDate}`)));
 
-  // Risk rationale
-  nodes.push(paragraph(text(analysis.overallRiskRationale)));
+  // Owner's update summary (quoted context)
+  if (analysis.weeklyUpdateFound && analysis.weeklyUpdateSummary) {
+    nodes.push(blockquote(paragraph(em(analysis.weeklyUpdateSummary))));
+  }
+
+  // Primary EM response
+  nodes.push(paragraph(text(analysis.emResponse)));
+
+  // Current week goal and last week highlights
+  if (analysis.currentWeekGoal && analysis.currentWeekGoal !== 'Not stated') {
+    nodes.push(paragraph(strong('This week: '), text(analysis.currentWeekGoal)));
+  }
+  if (analysis.lastWeekHighlights.length > 0) {
+    nodes.push(paragraph(strong('Last week:')));
+    nodes.push(bulletList(analysis.lastWeekHighlights.map((h) => [text(h)])));
+  }
+  if (analysis.dueDateChange) {
+    nodes.push(paragraph(strong('Due date change: '), text(analysis.dueDateChange)));
+  }
+
+  // Follow-up questions
+  if (analysis.followUpQuestions.length > 0) {
+    nodes.push(heading(4, text('Questions for next 1:1')));
+    nodes.push(orderedList(analysis.followUpQuestions.map((q) => [text(q)])));
+  }
+
+  // Blockers
+  if (analysis.blockersRaised.length > 0) {
+    nodes.push(heading(4, text('Blockers surfaced')));
+    nodes.push(bulletList(analysis.blockersRaised.map((b) => [text(b)])));
+  }
+  if (analysis.blockersResolved.length > 0) {
+    nodes.push(heading(4, text('Blockers resolved')));
+    nodes.push(bulletList(analysis.blockersResolved.map((b) => [text(b)])));
+  }
 
   nodes.push(rule());
 
-  // Goal & DoD
-  nodes.push(heading(4, text('Goal & Definition of Done')));
+  // Secondary: additional notes
+  nodes.push(heading(4, text('Additional Notes')));
   nodes.push(
-    bulletList([
-      [
-        strong('Goal Clarity: '),
-        text(`${analysis.goalClarity.rating} — ${analysis.goalClarity.observation}`),
-        ...(analysis.goalClarity.suggestion
-          ? [text(` Suggestion: ${analysis.goalClarity.suggestion}`)]
-          : []),
-      ],
-      [
-        strong('Definition of Done: '),
-        text(`${analysis.definitionOfDone.rating} — ${analysis.definitionOfDone.observation}`),
-        ...(analysis.definitionOfDone.suggestion
-          ? [text(` Suggestion: ${analysis.definitionOfDone.suggestion}`)]
-          : []),
-      ],
-    ]),
+    paragraph(strong(`Schedule: ${analysis.scheduleHealth.assessment} — `), text(analysis.scheduleHealth.rationale)),
   );
 
-  // Story Breakdown
-  nodes.push(heading(4, text('Story Breakdown')));
-  nodes.push(paragraph(text(analysis.storyBreakdown.observation)));
-  if (analysis.storyBreakdown.issuesFlagged.length > 0) {
+  if (analysis.housekeepingItems.length > 0) {
+    nodes.push(heading(4, text('Housekeeping')));
     nodes.push(
       bulletList(
-        analysis.storyBreakdown.issuesFlagged.map((f) => [
+        analysis.housekeepingItems.map((f) => [
           inlineCard(`${epicUrl.replace(/\/browse\/.*/, '')}/browse/${f.issueKey}`),
           text(` ${f.concern}: ${f.detail}`),
         ]),
       ),
     );
   }
-
-  // Schedule Health
-  nodes.push(heading(4, text('Schedule Health')));
-  nodes.push(
-    paragraph(strong(`${analysis.scheduleHealth.assessment} — `), text(analysis.scheduleHealth.rationale)),
-  );
-
-  // This Week's Progress
-  nodes.push(heading(4, text("This Week's Progress")));
-  if (!analysis.weeklyProgress.updatePosted) {
-    nodes.push(paragraph(em('No update posted this week.')));
-  } else {
-    nodes.push(paragraph(text(analysis.weeklyProgress.summary)));
-    if (analysis.weeklyProgress.blockersRaised.length > 0) {
-      nodes.push(paragraph(strong('Blockers raised: ')));
-      nodes.push(bulletList(analysis.weeklyProgress.blockersRaised.map((b) => [text(b)])));
-    }
-    if (analysis.weeklyProgress.blockersResolved.length > 0) {
-      nodes.push(paragraph(strong('Blockers resolved: ')));
-      nodes.push(bulletList(analysis.weeklyProgress.blockersResolved.map((b) => [text(b)])));
-    }
+  if (analysis.housekeepingNote) {
+    nodes.push(paragraph(em(analysis.housekeepingNote)));
   }
-
-  // Week-over-Week
-  nodes.push(heading(4, text('Week-over-Week')));
-  nodes.push(
-    paragraph(strong('Velocity trend: '), text(analysis.weekOverWeekDelta.velocityTrend)),
-  );
-  nodes.push(paragraph(text(analysis.weekOverWeekDelta.rationale)));
-  if (analysis.weekOverWeekDelta.commitmentsMet.length > 0) {
-    nodes.push(paragraph(strong('Commitments met:')));
-    nodes.push(bulletList(analysis.weekOverWeekDelta.commitmentsMet.map((c) => [text(c)])));
-  }
-  if (analysis.weekOverWeekDelta.commitmentsMissed.length > 0) {
-    nodes.push(paragraph(strong('Commitments missed:')));
-    nodes.push(bulletList(analysis.weekOverWeekDelta.commitmentsMissed.map((c) => [text(c)])));
-  }
-
-  // Recommendations
-  nodes.push(heading(4, text('Recommendations')));
-  nodes.push(
-    orderedList(
-      analysis.recommendations.map((r) => [
-        strong(`[${r.priority}] `),
-        text(`${r.action} `),
-        em(`(${r.audience})`),
-      ]),
-    ),
-  );
 
   nodes.push(rule());
   nodes.push(paragraph(em(signature)));

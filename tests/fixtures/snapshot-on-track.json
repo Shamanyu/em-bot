@@ -4,6 +4,7 @@
   "epicDescription": "Build a personalised tutoring engine that adapts lesson difficulty based on learner performance data. Success: \u226520% improvement in learner completion rate by end of Q2.",
   "epicStatus": "In Progress",
   "epicAssignee": "Priya Sharma",
+  "epicAssigneeAccountId": "abc123",
   "epicReporter": "Shamanyu Shrivastava",
   "epicStartDate": "2026-04-01",
   "epicDueDate": "2026-05-30",
@@ -71,6 +72,25 @@
       "body": "Week update: Started on CM-102. Will complete adaptation algorithm by Friday."
     }
   ],
+  "ownerUpdatesThisWeek": [
+    {
+      "issueKey": "CM-100",
+      "author": "Priya Sharma",
+      "authorAccountId": "abc123",
+      "createdAt": "2026-05-06T10:00:00.000Z",
+      "body": "Week update: Completed the core adaptation logic. Unit tests passing. Next: integration with learner profile service."
+    }
+  ],
+  "ownerUpdatesPreviousWeek": [
+    {
+      "issueKey": "CM-100",
+      "author": "Priya Sharma",
+      "authorAccountId": "abc123",
+      "createdAt": "2026-04-29T10:00:00.000Z",
+      "body": "Week update: Started on CM-102. Will complete adaptation algorithm by Friday."
+    }
+  ],
+  "latestOwnerUpdateAt": "2026-05-06T10:00:00.000Z",
   "botCommentExistsThisWeek": false,
   "lastBotCommentAt": null,
   "percentComplete": 50.0,
