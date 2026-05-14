@@ -10,10 +10,11 @@ import {
   rule,
 } from '../jira/adfBuilder.js';
 
-const RISK_BADGE: Record<string, string> = {
-  GREEN: '🟢',
-  YELLOW: '🟡',
-  RED: '🔴',
+const SCHEDULE_BADGE: Record<string, string> = {
+  ON_TRACK: '✅',
+  AT_RISK: '⚠️',
+  LIKELY_TO_SLIP: '🔴',
+  NO_DUE_DATE: '⬜',
 };
 
 export function buildRollupComment(
@@ -25,51 +26,22 @@ export function buildRollupComment(
   const nodes: AdfNode[] = [];
 
   nodes.push(heading(3, text(`${commentTag} Team Rollup — ${rollup.runDate}`)));
-
   nodes.push(paragraph(text(rollup.narrativeSummary)));
 
-  // Risk distribution
-  nodes.push(heading(4, text('Risk Distribution')));
-  nodes.push(
-    paragraph(
-      strong('🔴 RED: '),
-      text(`${rollup.riskCounts.RED}  `),
-      strong('🟡 YELLOW: '),
-      text(`${rollup.riskCounts.YELLOW}  `),
-      strong('🟢 GREEN: '),
-      text(`${rollup.riskCounts.GREEN}`),
-    ),
-  );
-
-  // Epics by risk — ADF table
-  nodes.push(heading(4, text('Epics by Risk')));
-  if (rollup.epicsByRisk.length > 0) {
-    nodes.push(buildRiskTable(rollup.epicsByRisk, baseUrl));
-  } else {
-    nodes.push(paragraph(em('No epics analysed.')));
+  // Epics with updates responded to
+  if (rollup.epicsWithUpdates.length > 0) {
+    nodes.push(heading(4, text('Updates Responded To')));
+    nodes.push(buildUpdatesTable(rollup.epicsWithUpdates, baseUrl));
   }
 
-  // Missing updates
-  if (rollup.missingUpdates.length > 0) {
-    nodes.push(heading(4, text('Missing Updates')));
+  // Friday escalations
+  if (rollup.epicsEscalated.length > 0) {
+    nodes.push(heading(4, text('Escalated — No Update Posted')));
     nodes.push(
       bulletList(
-        rollup.missingUpdates.map((key) => [
-          { type: 'inlineCard', attrs: { url: `${baseUrl}/browse/${key}` } } as AdfNode,
-          text(' — no update posted this week'),
-        ]),
-      ),
-    );
-  }
-
-  // Top risks
-  if (rollup.topRisksAcrossTeam.length > 0) {
-    nodes.push(heading(4, text('Top Risks')));
-    nodes.push(
-      bulletList(
-        rollup.topRisksAcrossTeam.map((r) => [
-          { type: 'inlineCard', attrs: { url: `${baseUrl}/browse/${r.epicKey}` } } as AdfNode,
-          text(` — ${r.rationale}`),
+        rollup.epicsEscalated.map((e) => [
+          { type: 'inlineCard', attrs: { url: `${baseUrl}/browse/${e.epicKey}` } } as AdfNode,
+          text(` — ${e.assignee ?? 'Unassigned'} — no update this week`),
         ]),
       ),
     );
@@ -89,13 +61,13 @@ export function buildRollupComment(
   return { version: 1, type: 'doc', content: nodes };
 }
 
-function buildRiskTable(
-  epics: TeamRollup['epicsByRisk'],
+function buildUpdatesTable(
+  epics: TeamRollup['epicsWithUpdates'],
   baseUrl: string,
 ): AdfNode {
   const headerRow: AdfNode = {
     type: 'tableRow',
-    content: ['Epic', 'Assignee', 'Risk', 'Signal'].map((h) => ({
+    content: ['Epic', 'Assignee', 'Schedule', 'Update Summary'].map((h) => ({
       type: 'tableHeader',
       attrs: {},
       content: [paragraph(strong(h))],
@@ -122,12 +94,12 @@ function buildRiskTable(
       {
         type: 'tableCell',
         attrs: {},
-        content: [paragraph(strong(`${RISK_BADGE[e.riskLevel] ?? ''} ${e.riskLevel}`))],
+        content: [paragraph(strong(`${SCHEDULE_BADGE[e.scheduleHealth] ?? ''} ${e.scheduleHealth}`))],
       },
       {
         type: 'tableCell',
         attrs: {},
-        content: [paragraph(text(e.signal))],
+        content: [paragraph(text(e.updateSummary || '—'))],
       },
     ],
   }));

@@ -14,18 +14,23 @@ describe('buildUserMessage', () => {
 
   it('includes child issue flags for at-risk snapshot', () => {
     const msg = buildUserMessage(snapshotAtRisk as EpicSnapshot);
-    expect(msg).toContain('no-description');
-    expect(msg).toContain('no-DoD');
+    expect(msg).toContain('no-AC');
     expect(msg).toContain('unassigned');
     expect(msg).toContain('stale-');
   });
 
-  it('shows no-update message when currentWeekComments is empty', () => {
+  it('shows owner update section when currentWeekComments is empty', () => {
     const msg = buildUserMessage(snapshotNoUpdate as EpicSnapshot);
-    expect(msg).toContain('No comments posted this week');
+    expect(msg).toContain("Owner's Update This Week");
+    expect(msg).toContain('No comments from the Epic owner this week');
   });
 
-  it('includes previous week comments', () => {
+  it('marks owner comments with [OWNER] label', () => {
+    const msg = buildUserMessage(snapshotOnTrack as EpicSnapshot);
+    expect(msg).toContain('[OWNER]');
+  });
+
+  it('includes previous week owner update section', () => {
     const msg = buildUserMessage(snapshotAtRisk as EpicSnapshot);
     expect(msg).toContain('Will get spec signed off');
   });

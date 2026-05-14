@@ -6,6 +6,7 @@ import { resolveScope } from './jira/scopeResolver.js';
 import { buildSnapshot } from './jira/snapshotBuilder.js';
 import { analyseEpic } from './llm/analyser.js';
 import { buildEpicComment } from './jira/adfBuilder.js';
+import { buildEscalationComment } from './jira/escalationAdfBuilder.js';
 import { buildRollup, type EpicOutcome } from './rollup/builder.js';
 import { buildRollupComment } from './rollup/adfBuilder.js';
 import { getLogger } from './lib/logger.js';
@@ -24,6 +25,7 @@ export interface RunSummary {
   epicsSkipped: number;
   epicsFailed: number;
   commentsPosted: number;
+  escalationsPosted: number;
   rollupPosted: boolean;
   durationMs: number;
 }
@@ -33,8 +35,9 @@ export async function run(deps: RunDeps): Promise<RunSummary> {
   const log = getLogger();
   const startTime = Date.now();
   const runStartedAt = new Date();
+  const isFriday = runStartedAt.getDay() === 5;
 
-  log.info({ event: 'run_start', dryRun });
+  log.info({ event: 'run_start', dryRun, isFriday });
 
   if (!config.enabled) {
     log.info({ event: 'disabled' });
@@ -44,6 +47,7 @@ export async function run(deps: RunDeps): Promise<RunSummary> {
       epicsSkipped: 0,
       epicsFailed: 0,
       commentsPosted: 0,
+      escalationsPosted: 0,
       rollupPosted: false,
       durationMs: Date.now() - startTime,
     };
@@ -73,6 +77,7 @@ export async function run(deps: RunDeps): Promise<RunSummary> {
         epicsSkipped: 0,
         epicsFailed: 0,
         commentsPosted: 0,
+        escalationsPosted: 0,
         rollupPosted: false,
         durationMs: Date.now() - startTime,
       };
@@ -84,6 +89,7 @@ export async function run(deps: RunDeps): Promise<RunSummary> {
   const runDate = runStartedAt.toISOString().split('T')[0] ?? runStartedAt.toISOString();
   const outcomes: EpicOutcome[] = [];
   let commentsPosted = 0;
+  let escalationsPosted = 0;
 
   for (const epicKey of epicKeys) {
     try {
@@ -98,32 +104,74 @@ export async function run(deps: RunDeps): Promise<RunSummary> {
       );
       log.info({ event: 'snapshot_built', epicKey, percentComplete: snapshot.percentComplete });
 
-      if (config.behaviour.skipIfAlreadyPosted && snapshot.botCommentExistsThisWeek) {
-        log.info({ event: 'epic_skipped', epicKey, reason: 'already_posted' });
-        outcomes.push({ epicKey, snapshot, analysis: null, error: null, skipped: true });
+      // Idempotency: skip if bot already responded to the latest owner update
+      if (config.behaviour.skipIfAlreadyPosted) {
+        const alreadyResponded =
+          snapshot.latestOwnerUpdateAt !== null &&
+          snapshot.lastBotCommentAt !== null &&
+          new Date(snapshot.lastBotCommentAt) >= new Date(snapshot.latestOwnerUpdateAt);
+
+        // Also skip if bot already posted this week and there's no newer owner update
+        const botPostedNoOwnerUpdate =
+          snapshot.botCommentExistsThisWeek && snapshot.latestOwnerUpdateAt === null;
+
+        if (alreadyResponded || botPostedNoOwnerUpdate) {
+          log.info({ event: 'epic_skipped', epicKey, reason: 'already_responded' });
+          outcomes.push({ epicKey, snapshot, analysis: null, error: null, skipped: true });
+          continue;
+        }
+      }
+
+      // Branch: owner update found → analyse and respond
+      if (snapshot.ownerUpdatesThisWeek.length > 0) {
+        const analysis = await analyseEpic(llmClient, snapshot, config);
+        log.info({ event: 'llm_analysed', epicKey, weeklyUpdateFound: analysis.weeklyUpdateFound });
+
+        const adfDoc = buildEpicComment(
+          analysis,
+          snapshot.epicUrl,
+          config.botIdentity.commentTag,
+          config.botIdentity.signature,
+          runDate,
+        );
+
+        if (dryRun) {
+          log.info({ event: 'dry_run_comment', epicKey, adf: JSON.stringify(adfDoc) });
+        } else {
+          await jiraClient.addComment(epicKey, adfDoc);
+          log.info({ event: 'comment_posted', epicKey });
+          commentsPosted++;
+        }
+
+        outcomes.push({ epicKey, snapshot, analysis, error: null, skipped: false });
         continue;
       }
 
-      const analysis = await analyseEpic(llmClient, snapshot, config);
-      log.info({ event: 'llm_analysed', epicKey, riskLevel: analysis.overallRiskLevel });
+      // Branch: no owner update and it's Friday → escalate
+      if (isFriday && snapshot.epicAssigneeAccountId && snapshot.epicAssignee) {
+        const escalationDoc = buildEscalationComment(
+          snapshot.epicAssigneeAccountId,
+          snapshot.epicAssignee,
+          config.botIdentity.commentTag,
+          config.botIdentity.signature,
+          runDate,
+        );
 
-      const adfDoc = buildEpicComment(
-        analysis,
-        snapshot.epicUrl,
-        config.botIdentity.commentTag,
-        config.botIdentity.signature,
-        runDate,
-      );
+        if (dryRun) {
+          log.info({ event: 'dry_run_escalation', epicKey, adf: JSON.stringify(escalationDoc) });
+        } else {
+          await jiraClient.addComment(epicKey, escalationDoc);
+          log.info({ event: 'escalation_posted', epicKey });
+          escalationsPosted++;
+        }
 
-      if (dryRun) {
-        log.info({ event: 'dry_run_comment', epicKey, adf: JSON.stringify(adfDoc) });
-      } else {
-        await jiraClient.addComment(epicKey, adfDoc);
-        log.info({ event: 'comment_posted', epicKey });
-        commentsPosted++;
+        outcomes.push({ epicKey, snapshot, analysis: null, error: null, skipped: false, escalated: true });
+        continue;
       }
 
-      outcomes.push({ epicKey, snapshot, analysis, error: null, skipped: false });
+      // No update, not Friday → skip silently and wait
+      log.info({ event: 'epic_skipped', epicKey, reason: 'no_owner_update' });
+      outcomes.push({ epicKey, snapshot, analysis: null, error: null, skipped: true });
     } catch (err) {
       const reason = (err as Error).message;
       log.error({ event: 'epic_failed', epicKey, reason });
@@ -170,6 +218,7 @@ export async function run(deps: RunDeps): Promise<RunSummary> {
     epicsSkipped,
     epicsFailed,
     commentsPosted,
+    escalationsPosted,
     rollupPosted,
     durationMs,
   };

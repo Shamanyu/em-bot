@@ -36,6 +36,22 @@ export async function buildSnapshot(
     isInWindow(new Date(c.createdAt), windows.previousStart, windows.previousEnd),
   );
 
+  const epicAssigneeAccountId =
+    (fields['assignee'] as { accountId: string } | null)?.accountId ?? null;
+
+  const ownerUpdatesThisWeek =
+    epicAssigneeAccountId !== null
+      ? currentWeekComments.filter((c) => c.authorAccountId === epicAssigneeAccountId)
+      : [];
+  const ownerUpdatesPreviousWeek =
+    epicAssigneeAccountId !== null
+      ? previousWeekComments.filter((c) => c.authorAccountId === epicAssigneeAccountId)
+      : [];
+  const latestOwnerUpdateAt =
+    ownerUpdatesThisWeek.length > 0
+      ? (ownerUpdatesThisWeek[ownerUpdatesThisWeek.length - 1]?.createdAt ?? null)
+      : null;
+
   const botInCurrent = currentWeekComments.filter((c) => c.body.startsWith(commentTag));
   const botCommentExistsThisWeek = botInCurrent.length > 0;
   const lastBotCommentAt =
@@ -82,6 +98,7 @@ export async function buildSnapshot(
     epicDescription,
     epicStatus: (fields['status'] as { name: string })?.name ?? '',
     epicAssignee: (fields['assignee'] as { displayName: string } | null)?.displayName ?? null,
+    epicAssigneeAccountId,
     epicReporter: (fields['reporter'] as { displayName: string } | null)?.displayName ?? null,
     epicStartDate: (fields['startdate'] as string | null) ?? null,
     epicDueDate: (fields['duedate'] as string | null) ?? null,
@@ -93,6 +110,9 @@ export async function buildSnapshot(
     childIssues: mappedChildren,
     currentWeekComments,
     previousWeekComments,
+    ownerUpdatesThisWeek,
+    ownerUpdatesPreviousWeek,
+    latestOwnerUpdateAt,
     botCommentExistsThisWeek,
     lastBotCommentAt,
     percentComplete: percentComplete(mappedChildren),
