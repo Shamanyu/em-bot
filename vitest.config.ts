@@ -20,6 +20,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@shared': path.resolve(__dirname, 'shared'),
+      '@weekly-review': path.resolve(__dirname, 'features/weekly-review'),
     },
     conditions: ['node'],
   },

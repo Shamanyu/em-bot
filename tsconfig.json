@@ -13,9 +13,10 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "paths": {
-      "@shared/*": ["./shared/*"]
+      "@shared/*": ["./shared/*"],
+      "@weekly-review/*": ["./features/weekly-review/*"]
     }
   },
   "include": ["shared/**/*", "features/**/*"],
-  "exclude": ["node_modules", "dist", "features/**/tests/**"]
+  "exclude": ["node_modules", "dist", "features/**/tests/**", "features/**/frontend/**"]
 }
