@@ -242,16 +242,16 @@ describe('buildEpicComment()', () => {
     expect(found).toBe(true);
   });
 
-  it('includes "Questions for next 1:1" ordered list when followUpQuestions exist', () => {
+  it('includes "Things to consider" bullet list when followUpQuestions exist', () => {
     const doc = buildEpicComment(makeAnalysis(), 'https://jira.example.com/browse/CM-100', '[TAG]', '— Bot', '2026-05-07');
     const hasHeading = doc.content.some(
-      (n) => n.type === 'heading' && n.content?.some((c) => c.text?.includes('Questions')),
+      (n) => n.type === 'heading' && n.content?.some((c) => c.text?.includes('Things to consider')),
     );
     expect(hasHeading).toBe(true);
-    expect(doc.content.some((n) => n.type === 'orderedList')).toBe(true);
+    expect(doc.content.some((n) => n.type === 'bulletList')).toBe(true);
   });
 
-  it('omits questions section when followUpQuestions is empty', () => {
+  it('omits "Things to consider" section when followUpQuestions is empty', () => {
     const doc = buildEpicComment(
       makeAnalysis({ followUpQuestions: [] }),
       'https://jira.example.com/browse/CM-100',
@@ -260,7 +260,7 @@ describe('buildEpicComment()', () => {
       '2026-05-07',
     );
     const hasHeading = doc.content.some(
-      (n) => n.type === 'heading' && n.content?.some((c) => c.text?.includes('Questions')),
+      (n) => n.type === 'heading' && n.content?.some((c) => c.text?.includes('Things to consider')),
     );
     expect(hasHeading).toBe(false);
   });
@@ -279,7 +279,7 @@ describe('buildEpicComment()', () => {
     expect(hasHeading).toBe(true);
   });
 
-  it('includes Blockers resolved section when blockersResolved is non-empty', () => {
+  it('omits Blockers resolved section (removed from output)', () => {
     const doc = buildEpicComment(
       makeAnalysis({ blockersResolved: ['Auth dependency unblocked'] }),
       'https://jira.example.com/browse/CM-100',
@@ -290,7 +290,7 @@ describe('buildEpicComment()', () => {
     const hasHeading = doc.content.some(
       (n) => n.type === 'heading' && n.content?.some((c) => c.text?.includes('Blockers resolved')),
     );
-    expect(hasHeading).toBe(true);
+    expect(hasHeading).toBe(false);
   });
 
   it('contains a rule separator', () => {
