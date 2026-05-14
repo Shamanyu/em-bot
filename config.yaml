@@ -11,7 +11,7 @@ schedule:
 
 llm:
   model: "claude-sonnet-4-6"
-  maxTokens: 2000
+  maxTokens: 4096
   maxRetries: 1
 
 botIdentity:
@@ -21,6 +21,4 @@ botIdentity:
 behaviour:
   skipIfAlreadyPosted: true
   postRollupEvenIfZeroEpics: false
-  minRecommendations: 2
-  maxRecommendations: 5
   maxEpicsPerRun: 20

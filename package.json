@@ -3,13 +3,15 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=20.0.0" },
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "dev": "tsx src/index.ts",
-    "lint": "eslint 'src/**/*.ts' 'tests/**/*.ts'",
-    "format": "prettier --write 'src/**/*.ts' 'tests/**/*.ts'",
+    "build": "tsc && tsc-alias",
+    "start": "node dist/features/weekly-review/src/index.js",
+    "dev": "tsx features/weekly-review/src/index.ts",
+    "lint": "eslint 'shared/**/*.ts' 'features/**/*.ts'",
+    "format": "prettier --write 'shared/**/*.ts' 'features/**/*.ts'",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
@@ -28,8 +30,10 @@
     "@typescript-eslint/parser": "^8.0.0",
     "eslint": "^9.0.0",
     "prettier": "^3.3.0",
+    "tsc-alias": "^1.8.17",
     "tsx": "^4.0.0",
     "typescript": "^5.5.0",
+    "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^2.0.0"
   }
 }
