@@ -1,0 +1,75 @@
+# EM Bot — Cursor AI Rules
+
+## Project overview
+TypeScript ESM monorepo. Two products:
+1. `features/weekly-review` — Tuesday cron bot: reads JIRA Epics, calls Claude via tool-use, posts ADF comments.
+2. `features/progress-dashboard` — Multi-tenant SaaS: Next.js 15 frontend on Vercel + Node pipeline on GitHub Actions. EMs sign up, connect JIRA + Anthropic, get a live dashboard. Credentials encrypted in Supabase Vault.
+
+## Language and toolchain
+- TypeScript strict mode, ESM (`"type": "module"`), Node 20+
+- Path aliases: `@shared/*` → `./shared/*`, `@weekly-review/*` → `./features/weekly-review/*`
+- Test: Vitest. Run: `npm test`. 250+ tests, no credentials needed.
+- Build: `npm run build`. Typecheck: `npm run typecheck`. Lint: `npm run lint`.
+- Frontend: Next.js 15 App Router, React 19, Tailwind CSS
+
+## Code style rules
+- No comments unless the WHY is non-obvious (hidden constraint, workaround for a specific bug)
+- Never explain what code does — well-named identifiers do that
+- No multi-paragraph docstrings or multi-line comment blocks
+- No backwards-compat shims, dead code, unused exports
+- Prefer editing existing files over creating new ones
+- No security vulnerabilities: no command injection, XSS, SQL injection
+- Validate at system boundaries (user input, external APIs) only
+- No hypothetical future-proofing or premature abstractions
+
+## Architecture rules
+- JIRA: `POST /rest/api/3/search/jql` cursor-based — does NOT accept `startAt`, use `nextPageToken`
+- Supabase: pipeline uses service role key (bypasses RLS); frontend uses anon key. Never swap.
+- `next.config.ts` must NOT have `output: 'export'` — server-rendered mode required for Auth
+- `EpicSnapshotSchema` field names — any change cascades to snapshotBuilder, promptBuilder, all fixtures, dashboard pipeline
+- `AnalysisResultSchema` enum values — must stay in sync with `tool.ts` input_schema and `adfBuilder.ts`
+- `DashboardPayload` shape changes need corresponding update to `frontend/lib/types.ts`
+- Vault secrets are stored as UUIDs in `tenant_config` — raw API keys never stored in DB columns
+
+## Multi-tenant pipeline (progress-dashboard)
+- `TENANT_ID` env var present → `loadConfigFromSupabase(tenantId)` → write to `dashboard_data` table
+- `TENANT_ID` absent → load from `dashboard-config.yaml` + `.env` → write to `dashboard.json` (local dev)
+- Vault decrypt: `SELECT decrypted_secret FROM vault.decrypted_secrets WHERE id = $1`
+- `upsertDashboardData()` writes payload AND updates `next_run_at` in `tenant_config`
+
+## LLM integration (weekly-review)
+- Tool: `submit_epic_analysis`. `tool_choice: {type:"tool", name:"submit_epic_analysis"}` always forced.
+- On Zod failure: append corrective note to system prompt, retry up to `maxRetries+1` total.
+- Wrong `epicKey` in tool response: throw immediately, no retry.
+
+## LLM integration (progress-dashboard)
+- Three tools: `submit_team_progress` (1 call), `submit_epic_goal_summary` (per epic), `submit_person_weekly_goal` (per person-epic).
+- `analyseTeamProgress` throws `LlmAnalysisFailedError` on exhaustion.
+- `analyseEpicGoal` returns fallback object on exhaustion (does not throw).
+- `analyseWeeklyGoal` skips LLM entirely when `ownerUpdatesThisWeek.length === 0`.
+- Prompts in `src/prompts/*.md` loaded at runtime via `readFileSync` — no rebuild needed.
+
+## Testing patterns
+- Mock `fs.readFileSync` for prompt loading in LLM analyser tests
+- Mock `@weekly-review/src/jira/snapshotBuilder.js` for epic fetcher tests
+- Mock `@supabase/supabase-js` for Supabase loader/writer tests
+- LLM mock: create `Anthropic.Message`-shaped objects with `content: [{type:'tool_use', ...}]`
+- Never hit real JIRA, Supabase, or Anthropic in tests
+
+## Frontend (features/progress-dashboard/frontend)
+- Server Components: use `createServerClient()` from `lib/supabase/server.ts`
+- Client Components: use `createBrowserClient()` from `lib/supabase/client.ts`
+- API routes: use `createServiceClient()` from `lib/supabase/server.ts` (service role, no cookies)
+- Auth middleware in `middleware.ts`: unauth → /login, no onboarding → /onboarding, / → /dashboard
+- Env vars: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
+
+## Supabase schema
+- `tenants`: id (= auth.users.id), org_name, logo_url, brand_color, onboarding_completed_at
+- `tenant_config`: tenant_id, jira_base_url, jira_user_email, jira_api_token_secret (UUID), anthropic_key_secret (UUID), project_keys[], schedule_days[], schedule_time_utc, next_run_at, last_run_at
+- `dashboard_data`: tenant_id, payload (jsonb), generated_at, run_status (pending|running|success|failed), error_msg
+- RLS: `USING (auth.uid() = tenant_id)` on all tables. Service role bypasses RLS.
+- Storage bucket: `logos` (public URLs stored in `tenants.logo_url`)
+
+## GitHub Actions secrets
+- `em-bot-weekly.yml`: needs JIRA_BASE_URL, JIRA_USER_EMAIL, JIRA_API_TOKEN, ANTHROPIC_API_KEY
+- `progress-dashboard.yml` (meta-runner every 30 min): needs SUPABASE_URL, SUPABASE_SERVICE_KEY only
