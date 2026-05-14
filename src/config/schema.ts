@@ -23,8 +23,6 @@ export const ConfigSchema = z.object({
   behaviour: z.object({
     skipIfAlreadyPosted: z.boolean().default(true),
     postRollupEvenIfZeroEpics: z.boolean().default(false),
-    minRecommendations: z.number().int().min(1).max(10).default(2),
-    maxRecommendations: z.number().int().min(1).max(10).default(5),
     maxEpicsPerRun: z.number().int().min(1).max(50).default(20),
   }),
 });

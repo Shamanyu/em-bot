@@ -1,7 +1,7 @@
-name: EM Bot Weekly Run
+name: EM Bot Daily Run
 on:
   schedule:
-    - cron: '30 5 * * 2'   # Tuesday 05:30 UTC = 11:00 IST
+    - cron: '30 5 * * 1-5'   # Mon–Fri 05:30 UTC = 11:00 IST
   workflow_dispatch:
     inputs:
       dry_run:

@@ -73,13 +73,6 @@ export async function analyseEpic(
       );
     }
 
-    // Clamp recommendations
-    const min = config.behaviour.minRecommendations;
-    const max = config.behaviour.maxRecommendations;
-    if (result.recommendations.length < min || result.recommendations.length > max) {
-      result.recommendations = result.recommendations.slice(0, max);
-    }
-
     return result;
   }
 

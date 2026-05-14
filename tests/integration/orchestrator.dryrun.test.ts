@@ -32,8 +32,6 @@ const config: Config = {
   behaviour: {
     skipIfAlreadyPosted: true,
     postRollupEvenIfZeroEpics: false,
-    minRecommendations: 2,
-    maxRecommendations: 5,
     maxEpicsPerRun: 20,
   },
 };

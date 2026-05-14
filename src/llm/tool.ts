@@ -8,46 +8,54 @@ export const epicAnalysisTool: Anthropic.Tool = {
     type: 'object',
     properties: {
       epicKey: { type: 'string', description: 'The Epic key being analysed.' },
-      overallRiskLevel: {
+
+      // Primary: EM response to the weekly update
+      weeklyUpdateFound: {
+        type: 'boolean',
+        description:
+          'True if the owner\'s comments this week constitute a weekly update (progress, blockers, next steps). Err on the side of true when uncertain.',
+      },
+      weeklyUpdateSummary: {
         type: 'string',
-        enum: ['GREEN', 'YELLOW', 'RED'],
-        description: 'Overall risk level for this Epic.',
+        description: 'One sentence paraphrasing what the owner said in their update. Empty string if no update found.',
       },
-      overallRiskRationale: {
+      currentWeekGoal: {
         type: 'string',
-        description: 'One or two sentences explaining the overall risk level.',
+        description: 'What the engineer said they plan to accomplish this week. Infer from update if stated explicitly.',
       },
-      goalClarity: { $ref: '#/$defs/dimension' },
-      definitionOfDone: { $ref: '#/$defs/dimension' },
-      storyBreakdown: {
-        type: 'object',
-        properties: {
-          issuesFlagged: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                issueKey: { type: 'string' },
-                concern: {
-                  type: 'string',
-                  enum: [
-                    'STALE_TODO',
-                    'NO_DESCRIPTION',
-                    'NO_ASSIGNEE',
-                    'NO_DUE_DATE',
-                    'OVERDUE',
-                    'OTHER',
-                  ],
-                },
-                detail: { type: 'string' },
-              },
-              required: ['issueKey', 'concern', 'detail'],
-            },
-          },
-          observation: { type: 'string' },
-        },
-        required: ['issuesFlagged', 'observation'],
+      lastWeekHighlights: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Key things the engineer reported completing or progressing last week. Be specific.',
       },
+      dueDateChange: {
+        type: 'string',
+        description: 'Any due date change mentioned in the update (e.g. "pushed to June 15"). Null if none.',
+        nullable: true,
+      },
+      emResponse: {
+        type: 'string',
+        description:
+          'Your direct EM response to the weekly update. 2–4 sentences. Candid and factual. React to what they said: acknowledge progress, name concerns, flag if a goal is vague, probe on blockers. Write as if sending this to the engineer after a 1:1.',
+      },
+      followUpQuestions: {
+        type: 'array',
+        items: { type: 'string' },
+        description:
+          'Specific questions you would ask in the next 1:1, grounded in what they wrote. Not generic — reference their actual update.',
+      },
+      blockersRaised: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Blockers explicitly raised in the update. Quote or closely paraphrase.',
+      },
+      blockersResolved: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Blockers explicitly stated as resolved this week.',
+      },
+
+      // Secondary: housekeeping
       scheduleHealth: {
         type: 'object',
         properties: {
@@ -59,72 +67,38 @@ export const epicAnalysisTool: Anthropic.Tool = {
         },
         required: ['assessment', 'rationale'],
       },
-      weeklyProgress: {
-        type: 'object',
-        properties: {
-          updatePosted: { type: 'boolean' },
-          summary: { type: 'string' },
-          blockersRaised: { type: 'array', items: { type: 'string' } },
-          blockersResolved: { type: 'array', items: { type: 'string' } },
-        },
-        required: ['updatePosted', 'summary', 'blockersRaised', 'blockersResolved'],
-      },
-      weekOverWeekDelta: {
-        type: 'object',
-        properties: {
-          previousWeekUpdateAvailable: { type: 'boolean' },
-          commitmentsMet: { type: 'array', items: { type: 'string' } },
-          commitmentsMissed: { type: 'array', items: { type: 'string' } },
-          velocityTrend: {
-            type: 'string',
-            enum: ['ACCELERATING', 'STABLE', 'SLOWING', 'UNKNOWN'],
-          },
-          rationale: { type: 'string' },
-        },
-        required: [
-          'previousWeekUpdateAvailable',
-          'commitmentsMet',
-          'commitmentsMissed',
-          'velocityTrend',
-          'rationale',
-        ],
-      },
-      recommendations: {
+      housekeepingItems: {
         type: 'array',
         items: {
           type: 'object',
           properties: {
-            priority: { type: 'string', enum: ['HIGH', 'MEDIUM', 'LOW'] },
-            action: { type: 'string' },
-            audience: { type: 'string', enum: ['ASSIGNEE', 'EM', 'TEAM'] },
+            issueKey: { type: 'string' },
+            concern: { type: 'string' },
+            detail: { type: 'string' },
           },
-          required: ['priority', 'action', 'audience'],
+          required: ['issueKey', 'concern', 'detail'],
         },
-        minItems: 1,
+        description: 'Story-level hygiene issues: missing story points, no assignee, stale todos, no AC, overdue.',
+      },
+      housekeepingNote: {
+        type: 'string',
+        description: 'One sentence summarising the overall housekeeping state. E.g. "3 stories missing story points."',
       },
     },
     required: [
       'epicKey',
-      'overallRiskLevel',
-      'overallRiskRationale',
-      'goalClarity',
-      'definitionOfDone',
-      'storyBreakdown',
+      'weeklyUpdateFound',
+      'weeklyUpdateSummary',
+      'currentWeekGoal',
+      'lastWeekHighlights',
+      'dueDateChange',
+      'emResponse',
+      'followUpQuestions',
+      'blockersRaised',
+      'blockersResolved',
       'scheduleHealth',
-      'weeklyProgress',
-      'weekOverWeekDelta',
-      'recommendations',
+      'housekeepingItems',
+      'housekeepingNote',
     ],
-    $defs: {
-      dimension: {
-        type: 'object',
-        properties: {
-          rating: { type: 'string', enum: ['STRONG', 'ADEQUATE', 'WEAK', 'MISSING'] },
-          observation: { type: 'string' },
-          suggestion: { type: 'string' },
-        },
-        required: ['rating', 'observation', 'suggestion'],
-      },
-    },
   },
 };
