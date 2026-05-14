@@ -7,6 +7,7 @@ export const ConfigSchema = z.object({
     rollupTicketKey: z.string().regex(/^[A-Z]+-\d+$/),
     projectKeys: z.array(z.string().regex(/^[A-Z]+$/)).min(1),
     apiVersion: z.literal('3').default('3'),
+    epicStatusJql: z.string().default('statusCategory != Done'),
   }),
   schedule: z.object({
     lookbackDays: z.number().int().min(1).max(30).default(7),
