@@ -4,6 +4,7 @@
   "epicDescription": "Improve AI features to boost productivity.",
   "epicStatus": "In Progress",
   "epicAssignee": "Amit Yadav",
+  "epicAssigneeAccountId": "def456",
   "epicReporter": "Shamanyu Shrivastava",
   "epicStartDate": "2026-03-01",
   "epicDueDate": "2026-05-20",
@@ -69,6 +70,25 @@
       "body": "Will get spec signed off and start CM-1240 this week."
     }
   ],
+  "ownerUpdatesThisWeek": [
+    {
+      "issueKey": "CM-1234",
+      "author": "Amit Yadav",
+      "authorAccountId": "def456",
+      "createdAt": "2026-05-05T11:00:00.000Z",
+      "body": "Blocked on API access from platform team. CM-1240 hasn't started yet, waiting for spec sign-off."
+    }
+  ],
+  "ownerUpdatesPreviousWeek": [
+    {
+      "issueKey": "CM-1234",
+      "author": "Amit Yadav",
+      "authorAccountId": "def456",
+      "createdAt": "2026-04-28T10:00:00.000Z",
+      "body": "Will get spec signed off and start CM-1240 this week."
+    }
+  ],
+  "latestOwnerUpdateAt": "2026-05-05T11:00:00.000Z",
   "botCommentExistsThisWeek": false,
   "lastBotCommentAt": null,
   "percentComplete": 25.0,

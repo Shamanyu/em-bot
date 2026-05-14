@@ -1,64 +1,36 @@
 {
   "epicKey": "CM-1234",
-  "overallRiskLevel": "RED",
-  "overallRiskRationale": "Epic is 25% complete with due date in 13 days, CM-1240 is unassigned and unstarted, and a blocker on API access is unresolved.",
-  "goalClarity": {
-    "rating": "WEAK",
-    "observation": "The description states 'improve AI features to boost productivity' without defining measurable outcomes or scope boundaries.",
-    "suggestion": "Add a measurable success criterion (e.g., 20% reduction in task completion time) and define which features are in scope."
-  },
-  "definitionOfDone": {
-    "rating": "MISSING",
-    "observation": "No acceptance criteria or definition of done found in the Epic or child issues.",
-    "suggestion": "Add an AC checklist to CM-1234 and require acceptance criteria on CM-1240 before work begins."
-  },
-  "storyBreakdown": {
-    "issuesFlagged": [
-      {
-        "issueKey": "CM-1240",
-        "concern": "STALE_TODO",
-        "detail": "In To Do status for 67 days with no description, no assignee, and no due date."
-      },
-      {
-        "issueKey": "CM-1240",
-        "concern": "NO_ASSIGNEE",
-        "detail": "Unassigned and not done."
-      }
-    ],
-    "observation": "1 of 2 stories is unstarted, unassigned, and has been in To Do for over two months."
-  },
+  "weeklyUpdateFound": true,
+  "weeklyUpdateSummary": "Amit reported being blocked on API access from the platform team; CM-1240 is waiting on spec sign-off.",
+  "currentWeekGoal": "Get spec signed off and unblock CM-1240 start.",
+  "lastWeekHighlights": [
+    "Completed initial design for the adapter layer",
+    "Raised API access blocker with platform team"
+  ],
+  "dueDateChange": null,
+  "emResponse": "The API access blocker needs immediate escalation — it's now blocking both this week's goal and CM-1240. The spec sign-off for CM-1240 should have closed last week; clarify whether this is in your control or needs EM involvement. With the due date 13 days out and 25% complete, there is no margin left for slippage.",
+  "followUpQuestions": [
+    "Who owns the API access request on the platform team side, and when is the latest you need it resolved before CM-1240 misses the window?",
+    "Is the spec sign-off blocked by reviewers or is it still being drafted?",
+    "Do you have a fallback plan if API access isn't granted before end of week?"
+  ],
+  "blockersRaised": ["API access from platform team"],
+  "blockersResolved": [],
   "scheduleHealth": {
     "assessment": "LIKELY_TO_SLIP",
     "rationale": "Epic is due 2026-05-20 (13 days away) with 25% completion and the largest story (CM-1240) not yet started."
   },
-  "weeklyProgress": {
-    "updatePosted": true,
-    "summary": "Amit reported being blocked on API access from the platform team and noted CM-1240 is waiting on spec sign-off.",
-    "blockersRaised": ["API access from platform team"],
-    "blockersResolved": []
-  },
-  "weekOverWeekDelta": {
-    "previousWeekUpdateAvailable": true,
-    "commitmentsMet": [],
-    "commitmentsMissed": ["Get spec signed off and start CM-1240"],
-    "velocityTrend": "SLOWING",
-    "rationale": "Commitment to start CM-1240 last week was not met; blocker is now explicitly cited."
-  },
-  "recommendations": [
+  "housekeepingItems": [
     {
-      "priority": "HIGH",
-      "action": "Escalate platform team API access blocker immediately to unblock CM-1240.",
-      "audience": "EM"
+      "issueKey": "CM-1240",
+      "concern": "STALE_TODO",
+      "detail": "In To Do status for 67 days with no description, no assignee, and no due date."
     },
     {
-      "priority": "HIGH",
-      "action": "Assign CM-1240 and add a description and acceptance criteria before end of day.",
-      "audience": "ASSIGNEE"
-    },
-    {
-      "priority": "MEDIUM",
-      "action": "Add measurable success criteria to CM-1234 description to clarify scope.",
-      "audience": "ASSIGNEE"
+      "issueKey": "CM-1240",
+      "concern": "NO_ASSIGNEE",
+      "detail": "Unassigned and not done."
     }
-  ]
+  ],
+  "housekeepingNote": "CM-1240 needs an assignee and description before it can be started."
 }

@@ -26,8 +26,6 @@ botIdentity:
 behaviour:
   skipIfAlreadyPosted: true
   postRollupEvenIfZeroEpics: false
-  minRecommendations: 2
-  maxRecommendations: 5
   maxEpicsPerRun: 20
 `;
 
@@ -88,8 +86,6 @@ botIdentity:
 behaviour:
   skipIfAlreadyPosted: true
   postRollupEvenIfZeroEpics: false
-  minRecommendations: 2
-  maxRecommendations: 5
   maxEpicsPerRun: 20
 `);
     vi.resetModules();

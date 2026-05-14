@@ -3,25 +3,29 @@ import { z } from 'zod';
 export const TeamRollupSchema = z.object({
   runDate: z.string(),
   epicCount: z.number(),
-  riskCounts: z.object({
-    GREEN: z.number(),
-    YELLOW: z.number(),
-    RED: z.number(),
+  updatesFound: z.number(),
+  escalationsPosted: z.number(),
+  skipped: z.number(),
+  scheduleHealthCounts: z.object({
+    ON_TRACK: z.number(),
+    AT_RISK: z.number(),
+    LIKELY_TO_SLIP: z.number(),
+    NO_DUE_DATE: z.number(),
   }),
-  epicsByRisk: z.array(
+  epicsWithUpdates: z.array(
     z.object({
       epicKey: z.string(),
       epicSummary: z.string(),
       assignee: z.string().nullable(),
-      riskLevel: z.enum(['GREEN', 'YELLOW', 'RED']),
-      signal: z.string(),
+      scheduleHealth: z.enum(['ON_TRACK', 'AT_RISK', 'LIKELY_TO_SLIP', 'NO_DUE_DATE']),
+      updateSummary: z.string(),
     }),
   ),
-  missingUpdates: z.array(z.string()),
-  topRisksAcrossTeam: z.array(
+  epicsEscalated: z.array(
     z.object({
       epicKey: z.string(),
-      rationale: z.string(),
+      epicSummary: z.string(),
+      assignee: z.string().nullable(),
     }),
   ),
   failedEpics: z.array(

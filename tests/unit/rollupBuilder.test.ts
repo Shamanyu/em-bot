@@ -10,6 +10,7 @@ function makeSnapshot(epicKey: string, assignee: string | null = null): EpicSnap
     epicDescription: '',
     epicStatus: 'In Progress',
     epicAssignee: assignee,
+    epicAssigneeAccountId: null,
     epicReporter: null,
     epicStartDate: null,
     epicDueDate: null,
@@ -20,6 +21,9 @@ function makeSnapshot(epicKey: string, assignee: string | null = null): EpicSnap
     childIssues: [],
     currentWeekComments: [],
     previousWeekComments: [],
+    ownerUpdatesThisWeek: [],
+    ownerUpdatesPreviousWeek: [],
+    latestOwnerUpdateAt: null,
     botCommentExistsThisWeek: false,
     lastBotCommentAt: null,
     percentComplete: 50,
@@ -27,24 +31,21 @@ function makeSnapshot(epicKey: string, assignee: string | null = null): EpicSnap
   };
 }
 
-function makeAnalysis(epicKey: string, riskLevel: 'GREEN' | 'YELLOW' | 'RED', updatePosted = true): AnalysisResult {
+function makeAnalysis(epicKey: string, scheduleHealth: 'ON_TRACK' | 'AT_RISK' | 'LIKELY_TO_SLIP' | 'NO_DUE_DATE' = 'ON_TRACK', weeklyUpdateFound = true): AnalysisResult {
   return {
     epicKey,
-    overallRiskLevel: riskLevel,
-    overallRiskRationale: `${riskLevel} rationale for ${epicKey}`,
-    goalClarity: { rating: 'ADEQUATE', observation: 'ok', suggestion: '' },
-    definitionOfDone: { rating: 'ADEQUATE', observation: 'ok', suggestion: '' },
-    storyBreakdown: { issuesFlagged: [], observation: 'ok' },
-    scheduleHealth: { assessment: 'ON_TRACK', rationale: 'ok' },
-    weeklyProgress: { updatePosted, summary: 'ok', blockersRaised: [], blockersResolved: [] },
-    weekOverWeekDelta: {
-      previousWeekUpdateAvailable: true,
-      commitmentsMet: [],
-      commitmentsMissed: [],
-      velocityTrend: 'STABLE',
-      rationale: 'stable',
-    },
-    recommendations: [{ priority: 'LOW', action: 'Review scope', audience: 'ASSIGNEE' }],
+    weeklyUpdateFound,
+    weeklyUpdateSummary: `Summary for ${epicKey}`,
+    currentWeekGoal: 'Complete feature X',
+    lastWeekHighlights: ['Finished Y'],
+    dueDateChange: null,
+    emResponse: 'Good progress. Watch the timeline.',
+    followUpQuestions: ['How is Z going?'],
+    blockersRaised: [],
+    blockersResolved: [],
+    scheduleHealth: { assessment: scheduleHealth, rationale: 'ok' },
+    housekeepingItems: [],
+    housekeepingNote: 'No issues.',
   };
 }
 
@@ -52,20 +53,30 @@ describe('buildRollup', () => {
   it('returns empty rollup for empty input', () => {
     const rollup = buildRollup([], '2026-05-07');
     expect(rollup.epicCount).toBe(0);
-    expect(rollup.epicsByRisk).toHaveLength(0);
-    expect(rollup.riskCounts).toEqual({ GREEN: 0, YELLOW: 0, RED: 0 });
+    expect(rollup.epicsWithUpdates).toHaveLength(0);
+    expect(rollup.updatesFound).toBe(0);
+    expect(rollup.escalationsPosted).toBe(0);
   });
 
-  it('sorts RED epics first', () => {
+  it('counts epics with updates correctly', () => {
     const outcomes: EpicOutcome[] = [
-      { epicKey: 'CM-1', snapshot: makeSnapshot('CM-1'), analysis: makeAnalysis('CM-1', 'GREEN'), error: null, skipped: false },
-      { epicKey: 'CM-2', snapshot: makeSnapshot('CM-2'), analysis: makeAnalysis('CM-2', 'RED'), error: null, skipped: false },
-      { epicKey: 'CM-3', snapshot: makeSnapshot('CM-3'), analysis: makeAnalysis('CM-3', 'YELLOW'), error: null, skipped: false },
+      { epicKey: 'CM-1', snapshot: makeSnapshot('CM-1'), analysis: makeAnalysis('CM-1', 'ON_TRACK'), error: null, skipped: false },
+      { epicKey: 'CM-2', snapshot: makeSnapshot('CM-2'), analysis: makeAnalysis('CM-2', 'AT_RISK'), error: null, skipped: false },
     ];
     const rollup = buildRollup(outcomes, '2026-05-07');
-    expect(rollup.epicsByRisk[0]?.epicKey).toBe('CM-2');
-    expect(rollup.epicsByRisk[1]?.epicKey).toBe('CM-3');
-    expect(rollup.epicsByRisk[2]?.epicKey).toBe('CM-1');
+    expect(rollup.updatesFound).toBe(2);
+    expect(rollup.scheduleHealthCounts.ON_TRACK).toBe(1);
+    expect(rollup.scheduleHealthCounts.AT_RISK).toBe(1);
+  });
+
+  it('counts escalated epics separately', () => {
+    const outcomes: EpicOutcome[] = [
+      { epicKey: 'CM-3', snapshot: makeSnapshot('CM-3'), analysis: null, error: null, skipped: false, escalated: true },
+    ];
+    const rollup = buildRollup(outcomes, '2026-05-07');
+    expect(rollup.escalationsPosted).toBe(1);
+    expect(rollup.epicsEscalated).toHaveLength(1);
+    expect(rollup.epicsEscalated[0]?.epicKey).toBe('CM-3');
   });
 
   it('collects failedEpics', () => {
@@ -78,21 +89,21 @@ describe('buildRollup', () => {
     expect(rollup.failedEpics[0]?.reason).toBe('network error');
   });
 
-  it('collects missingUpdates', () => {
+  it('includes narrative summary with update count', () => {
     const outcomes: EpicOutcome[] = [
-      { epicKey: 'CM-10', snapshot: makeSnapshot('CM-10'), analysis: makeAnalysis('CM-10', 'YELLOW', false), error: null, skipped: false },
+      { epicKey: 'CM-1', snapshot: makeSnapshot('CM-1'), analysis: makeAnalysis('CM-1', 'AT_RISK'), error: null, skipped: false },
     ];
     const rollup = buildRollup(outcomes, '2026-05-07');
-    expect(rollup.missingUpdates).toContain('CM-10');
+    expect(rollup.narrativeSummary).toContain('1 epic');
+    expect(rollup.narrativeSummary).toContain('weekly update');
   });
 
-  it('includes narrative summary with counts', () => {
+  it('skipped epics are not counted in epicCount', () => {
     const outcomes: EpicOutcome[] = [
-      { epicKey: 'CM-1', snapshot: makeSnapshot('CM-1'), analysis: makeAnalysis('CM-1', 'RED'), error: null, skipped: false },
-      { epicKey: 'CM-2', snapshot: makeSnapshot('CM-2'), analysis: makeAnalysis('CM-2', 'GREEN'), error: null, skipped: false },
+      { epicKey: 'CM-1', snapshot: makeSnapshot('CM-1'), analysis: null, error: null, skipped: true },
     ];
     const rollup = buildRollup(outcomes, '2026-05-07');
-    expect(rollup.narrativeSummary).toContain('2 epics');
-    expect(rollup.narrativeSummary).toContain('RED');
+    expect(rollup.epicCount).toBe(0);
+    expect(rollup.skipped).toBe(1);
   });
 });

@@ -17,8 +17,6 @@ const config: Config = {
   behaviour: {
     skipIfAlreadyPosted: true,
     postRollupEvenIfZeroEpics: false,
-    minRecommendations: 2,
-    maxRecommendations: 5,
     maxEpicsPerRun: 20,
   },
 };
@@ -64,7 +62,7 @@ describe('analyseEpic', () => {
 
     const result = await analyseEpic(mockClient, snapshotAtRisk as EpicSnapshot, config);
     expect(result.epicKey).toBe('CM-1234');
-    expect(result.overallRiskLevel).toBe('RED');
+    expect(result.weeklyUpdateFound).toBe(true);
     expect(mockClient.createMessage).toHaveBeenCalledTimes(1);
   });
 

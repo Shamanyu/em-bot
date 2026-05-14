@@ -8,88 +8,88 @@ export interface EpicOutcome {
   analysis: AnalysisResult | null;
   error: string | null;
   skipped: boolean;
+  escalated?: boolean;
 }
 
 export function buildRollup(outcomes: EpicOutcome[], runDate: string): TeamRollup {
-  const processed = outcomes.filter((o) => !o.skipped && o.analysis !== null);
+  const withAnalysis = outcomes.filter((o) => !o.skipped && o.analysis !== null && !o.escalated);
+  const escalated = outcomes.filter((o) => o.escalated === true);
   const failed = outcomes.filter((o) => !o.skipped && o.error !== null);
+  const skipped = outcomes.filter((o) => o.skipped);
 
-  const riskCounts = { GREEN: 0, YELLOW: 0, RED: 0 };
-  for (const o of processed) {
-    if (o.analysis) riskCounts[o.analysis.overallRiskLevel]++;
+  const scheduleHealthCounts = { ON_TRACK: 0, AT_RISK: 0, LIKELY_TO_SLIP: 0, NO_DUE_DATE: 0 };
+  for (const o of withAnalysis) {
+    if (o.analysis) {
+      scheduleHealthCounts[o.analysis.scheduleHealth.assessment]++;
+    }
   }
 
-  const epicsByRisk = [...processed]
-    .sort((a, b) => {
-      const order = { RED: 0, YELLOW: 1, GREEN: 2 };
-      return (
-        order[a.analysis?.overallRiskLevel ?? 'GREEN'] -
-        order[b.analysis?.overallRiskLevel ?? 'GREEN']
-      );
-    })
-    .map((o) => ({
-      epicKey: o.epicKey,
-      epicSummary: o.snapshot.epicSummary,
-      assignee: o.snapshot.epicAssignee,
-      riskLevel: o.analysis?.overallRiskLevel ?? 'GREEN' as const,
-      signal: o.analysis?.overallRiskRationale ?? '',
-    }));
+  const epicsWithUpdates = withAnalysis.map((o) => ({
+    epicKey: o.epicKey,
+    epicSummary: o.snapshot.epicSummary,
+    assignee: o.snapshot.epicAssignee,
+    scheduleHealth: o.analysis?.scheduleHealth.assessment ?? 'NO_DUE_DATE' as const,
+    updateSummary: o.analysis?.weeklyUpdateSummary ?? '',
+  }));
 
-  const missingUpdates = processed
-    .filter((o) => o.analysis && !o.analysis.weeklyProgress.updatePosted)
-    .map((o) => o.epicKey);
-
-  const topRisksAcrossTeam = processed
-    .filter((o) => o.analysis && o.analysis.overallRiskLevel !== 'GREEN')
-    .slice(0, 3)
-    .map((o) => ({
-      epicKey: o.epicKey,
-      rationale: o.analysis?.overallRiskRationale ?? '',
-    }));
+  const epicsEscalated = escalated.map((o) => ({
+    epicKey: o.epicKey,
+    epicSummary: o.snapshot.epicSummary,
+    assignee: o.snapshot.epicAssignee,
+  }));
 
   const failedEpics = failed.map((o) => ({
     epicKey: o.epicKey,
     reason: o.error ?? 'Unknown error',
   }));
 
-  const narrativeSummary = buildNarrative(processed.length, riskCounts, missingUpdates.length, failed.length);
+  const narrativeSummary = buildNarrative(
+    withAnalysis.length,
+    escalated.length,
+    skipped.length,
+    scheduleHealthCounts,
+    failed.length,
+  );
 
   return {
     runDate,
     epicCount: outcomes.filter((o) => !o.skipped).length,
-    riskCounts,
-    epicsByRisk,
-    missingUpdates,
-    topRisksAcrossTeam,
+    updatesFound: withAnalysis.length,
+    escalationsPosted: escalated.length,
+    skipped: skipped.length,
+    scheduleHealthCounts,
+    epicsWithUpdates,
+    epicsEscalated,
     failedEpics,
     narrativeSummary,
   };
 }
 
 function buildNarrative(
-  total: number,
-  riskCounts: { GREEN: number; YELLOW: number; RED: number },
-  missingCount: number,
-  failedCount: number,
+  updatesFound: number,
+  escalations: number,
+  skipped: number,
+  health: { ON_TRACK: number; AT_RISK: number; LIKELY_TO_SLIP: number; NO_DUE_DATE: number },
+  failed: number,
 ): string {
   const parts: string[] = [];
-  parts.push(`${total} epic${total !== 1 ? 's' : ''} analysed.`);
 
-  if (riskCounts.RED > 0) {
-    parts.push(`${riskCounts.RED} RED (requires immediate attention).`);
+  if (updatesFound > 0) {
+    parts.push(`${updatesFound} epic${updatesFound !== 1 ? 's' : ''} with weekly updates responded to.`);
+    const atRisk = health.AT_RISK + health.LIKELY_TO_SLIP;
+    if (atRisk > 0) {
+      parts.push(`${atRisk} at risk or likely to slip.`);
+    }
   }
-  if (riskCounts.YELLOW > 0) {
-    parts.push(`${riskCounts.YELLOW} YELLOW (monitor closely).`);
+  if (escalations > 0) {
+    parts.push(`${escalations} epic${escalations !== 1 ? 's' : ''} escalated — no update posted.`);
   }
-  if (riskCounts.GREEN > 0) {
-    parts.push(`${riskCounts.GREEN} GREEN (on track).`);
+  if (skipped > 0) {
+    parts.push(`${skipped} epic${skipped !== 1 ? 's' : ''} skipped — waiting for owner update.`);
   }
-  if (missingCount > 0) {
-    parts.push(`${missingCount} epic${missingCount !== 1 ? 's' : ''} missing this week's update.`);
-  }
-  if (failedCount > 0) {
-    parts.push(`${failedCount} epic${failedCount !== 1 ? 's' : ''} failed to analyse.`);
+  if (failed > 0) {
+    parts.push(`${failed} epic${failed !== 1 ? 's' : ''} failed to analyse.`);
   }
 
-  return parts.join(' ');
+  return parts.length > 0 ? parts.join(' ') : 'No epics processed this run.';
 }
