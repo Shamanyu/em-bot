@@ -1,8 +1,8 @@
 name: Progress Dashboard
 
 on:
-  schedule:
-    - cron: '*/30 * * * *'  # Every 30 min — check which tenants are due to run
+  # schedule:
+  #   - cron: '*/30 * * * *'  # Every 30 min — check which tenants are due to run
   workflow_dispatch:
     inputs:
       tenant_id:
